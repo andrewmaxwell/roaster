@@ -6,6 +6,7 @@
 //       UI gets buttons to pour beans in and discharge them. Roasts go to
 //       logs-sim/ (gitignored), never to logs/.
 //   --port 3100 to change the port.
+//   --open opens the UI in Chrome once it's up (npm start passes it).
 //
 // Monitor: connects and prints every reading. Against the real roaster this
 // never sets a control: it only does the handshake (PI, TU C, SC AR), polls
@@ -46,6 +47,7 @@ const SIM = args.includes('--sim');
 const AUTOPILOT = SIM && args.includes('--autopilot');
 const SELFTEST = args.includes('--selftest');
 const MONITOR = args.includes('--monitor');
+const OPEN = args.includes('--open');
 const portArg = args.indexOf('--port');
 const PORT = portArg >= 0 ? Number(args[portArg + 1]) : 3100;
 const speedArg = args.indexOf('--speed');
@@ -132,12 +134,24 @@ else if (MONITOR) {
       `kaleido is already running (pid ${other}): http://localhost:${PORT}/`,
     );
     console.log(`If it isn't, delete ${HEARTBEAT_FILE} and start again.`);
+    if (OPEN) openInChrome();
     process.exit(1);
   }
   const logsDir = here(SIM ? '../logs-sim/' : '../logs/');
   app = startApp({machine, clock, sim, port: PORT, logsDir});
+  if (OPEN) app.server.once('listening', openInChrome);
 }
 machine.run();
+
+// A new Chrome tab on the UI. Best effort: the app runs fine without it.
+function openInChrome() {
+  const url = `http://localhost:${PORT}/`;
+  spawn('open', ['-a', 'Google Chrome', url], {stdio: 'ignore'})
+    .on('error', (err) => log(`couldn't open Chrome: ${err.message}`))
+    .on('exit', (code) => {
+      if (code) log(`couldn't open Chrome; go to ${url}`);
+    });
+}
 
 function runAutopilot() {
   const preheat = JSON.parse(

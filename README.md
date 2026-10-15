@@ -6,7 +6,7 @@ Kaleido - 2026 - Automated roast controller for a Kaleido M1 LITE that follows a
 
 Run `npm install` once, in this folder, then:
 
-- `node server/main.js` connects to the roaster (quit Artisan first) and serves the app at http://localhost:3100/. Click **Start** to turn on sound, then **Start preheating**.
+- `npm start` (or `node server/main.js`) connects to the roaster (quit Artisan first) and serves the app at http://localhost:3100/. `npm start` also opens it in Chrome. Click **Start** to turn on sound, then **Start preheating**.
 - `node server/main.js --sim --speed 20` does the same with a simulated roaster, so you can try the whole flow anywhere. Its roasts go to `logs-sim/`.
 - `npm run selftest` runs the empty-drum hardware checks without intentional heating. The drum and fans run, and the test prompts you to unplug and reconnect USB. Add `-- --no-cable` to skip the cable check.
 - `npm run selftest:heat` runs the full empty-drum hardware test, including heating. It asks for confirmation before firing the burner.

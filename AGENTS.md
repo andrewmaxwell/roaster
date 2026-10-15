@@ -11,7 +11,7 @@ It needs a local Node server (`serialport`, `ws`, `express` from `package.json`;
 ```
 server/
   main.js        node server/main.js [--sim [--speed 10]]: the app at http://localhost:3100/
-                 --monitor (read-only on real hardware), --sim --autopilot (terminal demo),
+                 --open (UI in Chrome; npm start), --monitor (read-only on real hardware), --sim --autopilot (terminal demo),
                  --selftest [--no-heat] [--no-cable]
   app.js         HTTP + WebSocket server for the UI; saves/resumes the session (logs/.session.json)
   clock.js       real clock (with a speed-up for the sim) and a virtual clock for tests
