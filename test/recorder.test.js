@@ -145,6 +145,37 @@ test('weight out and tasting notes patch the log later', async () => {
   await finish(ctx);
 });
 
+test('live weight and notes survive session recovery and the next log write', async () => {
+  const ctx = setup();
+  const {clock, sim, session, recorder, machine} = ctx;
+  autopilot(session, sim, clock, {batches: [ESPRESSO], reactMs: 30_000});
+  await clock.until(() => session.batch?.tp, 2 * HOUR, 1500);
+  session.dropNow();
+  let saved = JSON.parse(JSON.stringify(session.toJSON()));
+  session.on('persist', () => {
+    saved = JSON.parse(JSON.stringify(session.toJSON()));
+  });
+  recorder.setWeightOut(session.batch.number, 131.5);
+  recorder.addNote(session.batch.number, 'Chocolate.', new Date('2026-10-15'));
+  const file = path.join(ctx.dir, `${session.batch.file}.json`);
+  const samples = readRoast(file).samples;
+  session.detach();
+  const restored = new Session({machine, clock, preheat, loadProcedure});
+  const resumedRecorder = new Recorder({
+    session: restored,
+    dir: ctx.dir,
+    beans,
+  });
+  restored.start(saved);
+  resumedRecorder.write(restored.batch);
+  const record = readRoast(file);
+  assert.equal(record.weightOut, 131.5);
+  assert.deepEqual(record.notes, [{date: '2026-10-15', text: 'Chocolate.'}]);
+  assert.deepEqual(record.samples, samples);
+  restored.detach();
+  await finish(ctx);
+});
+
 test('notes on an older Artisan roast add up, and leave the rest alone', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kaleido-'));
   const name = '#7_ethiopiques_v2_26-06-14_1418.json';

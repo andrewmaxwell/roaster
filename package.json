@@ -11,6 +11,8 @@
     "start": "node server/main.js",
     "sim": "node server/main.js --sim --speed 20",
     "stop": "node server/stop.js",
+    "selftest": "node server/main.js --selftest --no-heat",
+    "selftest:heat": "node server/main.js --selftest",
     "test": "node --test --test-force-exit test/*.test.js",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write ."

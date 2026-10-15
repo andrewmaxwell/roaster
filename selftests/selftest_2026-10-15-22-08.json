@@ -1,0 +1,116 @@
+{
+  "startedAt": "2026-10-15T22:08:35.955Z",
+  "checks": [
+    {
+      "name": "connects and reads temperatures",
+      "ok": true,
+      "detail": "BT 25.9 ET 25.6 AT 27.8",
+      "seconds": 1.258
+    },
+    {
+      "name": "heater safely off",
+      "ok": true,
+      "detail": "echoed (sends: HS×1 AH×1 HP×0)",
+      "seconds": 0.253
+    },
+    {
+      "name": "control: air",
+      "ok": true,
+      "detail": "echoed (sends: FC×1)",
+      "seconds": 0.251
+    },
+    {
+      "name": "control: drum",
+      "ok": true,
+      "detail": "echoed (sends: RC×1)",
+      "seconds": 0.251
+    },
+    {
+      "name": "control: cooling fan on",
+      "ok": true,
+      "detail": "echoed (sends: CS×1)",
+      "seconds": 0.251
+    },
+    {
+      "name": "control: cooling fan off",
+      "ok": true,
+      "detail": "echoed (sends: CS×1)",
+      "seconds": 0.251
+    },
+    {
+      "name": "control: setpoint",
+      "ok": true,
+      "detail": "echoed (sends: TS×1)",
+      "seconds": 0.251
+    },
+    {
+      "name": "control: auto mode on (heater still off)",
+      "ok": true,
+      "detail": "echoed (sends: AH×1)",
+      "seconds": 0.252
+    },
+    {
+      "name": "control: auto mode off",
+      "ok": true,
+      "detail": "echoed (sends: AH×1)",
+      "seconds": 0.251
+    },
+    {
+      "name": "control: heater switch on (burner at 0)",
+      "ok": true,
+      "detail": "echoed (sends: HS×1)",
+      "seconds": 0.251
+    },
+    {
+      "name": "control: heater switch off",
+      "ok": true,
+      "detail": "echoed (sends: HS×1)",
+      "seconds": 0.252
+    },
+    {
+      "name": "control: drum back to 90, air 30",
+      "ok": true,
+      "detail": "echoed (sends: RC×1 FC×1)",
+      "seconds": 0.251
+    },
+    {
+      "name": "cooling fan",
+      "ok": true,
+      "detail": "echoed (sends: CS×1)",
+      "seconds": 0.252
+    },
+    {
+      "name": "survives a cable pull",
+      "ok": true,
+      "detail": "echoed (sends: )",
+      "seconds": 13.528
+    },
+    {
+      "name": "shutdown: heater off, cool down",
+      "ok": true,
+      "detail": "nothing to cool",
+      "seconds": 0.251
+    },
+    {
+      "name": "all off",
+      "ok": true,
+      "detail": "echoed (sends: HS×0 AH×0 HP×0 FC×1 RC×1 CS×1)",
+      "seconds": 0.252
+    }
+  ],
+  "observations": {
+    "serial": "9CKFFR4Y2CL5"
+  },
+  "sends": {
+    "TU": 2,
+    "SC": 2,
+    "RD": 8,
+    "HS": 4,
+    "AH": 4,
+    "FC": 5,
+    "RC": 4,
+    "CS": 5,
+    "TS": 2
+  },
+  "passed": true
+}

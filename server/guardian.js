@@ -93,7 +93,16 @@ export async function guard({
     if (verdict === 'clean' || verdict === 'replaced') return verdict;
     if (verdict !== 'ok') {
       log(`guardian: ${verdict}; turning the heater off`);
-      if (isAlive(pid)) kill(pid);
+      if (isAlive(pid)) {
+        try {
+          kill(pid);
+        } catch (err) {
+          // It can exit between isAlive() and kill(). Other failures still
+          // deserve a stop attempt and, if that fails, the spoken warning.
+          if (err.code !== 'ESRCH')
+            log(`guardian: couldn't stop the app: ${err.message}`);
+        }
+      }
       // The port frees up once the app is gone; retry until the stop lands,
       // unless a restarted app takes over first (it holds the port and has
       // its own guardian).
@@ -107,7 +116,11 @@ export async function guard({
           );
           return 'replaced';
         }
-        result = await stop();
+        try {
+          result = await stop();
+        } catch (err) {
+          result = {ok: false, message: err.message};
+        }
         if (result.ok) break;
       }
       log(`guardian: ${result.message}`);

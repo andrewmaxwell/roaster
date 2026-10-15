@@ -158,3 +158,38 @@ test('skipping the cool-down leaves the air and drum cooling, heater off', async
     {HS: 0, HP: 0, FC: 100, RC: 90},
   );
 });
+
+for (const loseReadings of [false, true]) {
+  test(`failed cool-down leaves air and drum running (${loseReadings ? 'lost readings' : 'still hot'})`, async () => {
+    const clock = createVirtualClock();
+    const sim = new SimKaleido({clock});
+    const readings = sim.readings.bind(sim);
+    let cooling = false;
+    sim.readings = () => {
+      const r = {...readings(), BT: '185.0'};
+      if (cooling && loseReadings) delete r.BT;
+      return r;
+    };
+    const machine = new Machine({clock, openTransport: () => sim.open()});
+    machine.run();
+    const run = runSelfTest({
+      machine,
+      clock,
+      log: (line) => {
+        if (line.includes('shutdown: heater off, cool down')) cooling = true;
+      },
+      ask: async () => {},
+      opts: {heat: false, cable: false},
+    });
+    const report = await result({clock, run, machine});
+    assert.equal(report.passed, false);
+    assert.equal(
+      report.checks.find((c) => c.name.startsWith('shutdown:')).ok,
+      false,
+    );
+    assert.deepEqual(
+      {HS: sim.m.HS, HP: sim.m.HP, FC: sim.m.FC, RC: sim.m.RC},
+      {HS: 0, HP: 0, FC: 100, RC: 90},
+    );
+  });
+}

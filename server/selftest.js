@@ -115,6 +115,14 @@ export async function runSelfTest({machine, clock, log, ask, opts = {}}) {
 
   let heated = false;
   let skippedCooling = false;
+  let cooledSafely = false;
+  const isCool = () =>
+    machine.connected &&
+    !machine.blind &&
+    latest != null &&
+    clock.now() - latest.t <= machine.silenceMs &&
+    Number.isFinite(latest.BT) &&
+    latest.BT < 60;
   let connectedOnce = false;
   try {
     // 1
@@ -282,12 +290,15 @@ export async function runSelfTest({machine, clock, log, ask, opts = {}}) {
       await check('shutdown: heater off, cool down', async () => {
         const [ok, detail] = await settle({...SAFE, FC: 100, RC: 90});
         if (!ok) return [false, detail];
-        if (!heated && !(latest?.BT >= 60)) return [true, 'nothing to cool'];
+        if (!heated && isCool()) {
+          cooledSafely = true;
+          return [true, 'nothing to cool'];
+        }
         const skip = offerSkip(
           "Cooling to 60 °C with the air at 100%. Press Enter to finish now; the air and drum keep running until you run 'node server/stop.js --all'.",
         );
         const cooled = await waitFor(
-          () => latest.BT < 60 || skip.skipped(),
+          () => isCool() || skip.skipped(),
           45 * MIN,
           1000,
           (t) =>
@@ -297,15 +308,16 @@ export async function runSelfTest({machine, clock, log, ask, opts = {}}) {
           skippedCooling = true;
           return [true, `skipped at ${latest.BT}; air and drum left running`];
         }
+        cooledSafely = cooled && isCool();
         return cooled
           ? [true, `cooled to ${latest.BT}`]
           : [false, `still ${latest.BT} after 45 min`];
       });
-      // Whatever happened above, end with everything off (except the air
-      // and drum, if the person cut the cool-down short on a hot machine).
-      if (skippedCooling)
+      // Only stop the air and drum after a fresh reading confirms it's cool.
+      // A timeout, a failed control, or lost readings must leave them running.
+      if (skippedCooling || !cooledSafely)
         await check('heater off, air and drum left cooling', () =>
-          settle({...SAFE, CS: 0}, 30_000),
+          settle({...SAFE, FC: 100, RC: 90, CS: 0}, 30_000),
         );
       else
         await check('all off', () =>

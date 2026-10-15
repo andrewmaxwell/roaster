@@ -156,7 +156,11 @@ export class Recorder {
     const live = this.session.batch;
     if (live?.file && (live.number === roast || live.file === roast)) {
       change(live);
-      return this.write(live);
+      this.write(live);
+      // A restart restores the session's batch and rewrites its roast log.
+      // Save these edits there too, or that rewrite loses the new metadata.
+      this.session.emit('persist');
+      return;
     }
     const file = roastPath(this.dir, roast);
     const record = readRoast(file);

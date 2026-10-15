@@ -59,6 +59,7 @@ export class Machine extends EventEmitter {
     this.sent = {}; // commands written per tag (resends included)
     this.stopped = false;
     this.blind = false; // no BT readings: heater held off (see target)
+    this.awaitingReading = true; // every connection needs its own first BT
   }
 
   // Merge into the desired state and push the changes out right away.
@@ -93,11 +94,11 @@ export class Machine extends EventEmitter {
   }
 
   // The roaster itself reports the heater off, and every desired control
-  // matches, in a reading polled after the lock (an older one could predate
-  // a heat command that was already on its way).
+  // matches, with a heater report received at least one poll after the lock
+  // (unrelated replies mustn't make an older HS 0 count as confirmation).
   heaterConfirmedOff() {
     return (
-      this.lastRx >= this.heatLockedAt + this.pollMs &&
+      this.lastHeaterReport >= this.heatLockedAt + this.pollMs &&
       this.state.HS === 0 &&
       this.settled()
     );
@@ -111,7 +112,11 @@ export class Machine extends EventEmitter {
   // What we actually drive a control to: the desired value, or off for the
   // heat controls while there are no readings.
   target(k) {
-    return this.blind && k in HEAT_OFF ? HEAT_OFF[k] : this.desired[k];
+    const want = this.desired[k];
+    // A monitor owns no controls: missing BT mustn't turn it into a writer.
+    return (this.blind || this.awaitingReading) && k in HEAT_OFF && want != null
+      ? HEAT_OFF[k]
+      : want;
   }
 
   matches(k) {
@@ -200,8 +205,10 @@ export class Machine extends EventEmitter {
     // A BT that isn't a number (a probe fault) is no reading at all.
     if ('BT' in msg.vars && !Number.isFinite(msg.vars.BT)) delete msg.vars.BT;
     Object.assign(this.state, {sid: msg.sid}, msg.vars);
+    if ('HS' in msg.vars) this.lastHeaterReport = this.lastRx;
     if ('BT' in msg.vars) {
       this.lastReading = this.lastRx;
+      this.awaitingReading = false;
       this.setBlind(false);
       this.emit('sample', {t: this.lastRx, ...this.state});
     }
@@ -287,6 +294,8 @@ export class Machine extends EventEmitter {
     }
     // Readings from a dead connection must never be trusted.
     this.state = {};
+    this.awaitingReading = true;
+    this.lastHeaterReport = undefined;
     this.lastSent = {};
     this.mismatchSince = {};
     if (this.connected) {

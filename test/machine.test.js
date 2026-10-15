@@ -1,12 +1,73 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {createClock} from '../server/clock.js';
+import {createClock, createVirtualClock} from '../server/clock.js';
 import {encode, parse} from '../server/protocol.js';
 import {Machine} from '../server/machine.js';
 import {SimKaleido} from '../server/sim.js';
 import {emergencyStop} from '../server/stop.js';
 
 const PREHEAT = {TS: 185, HS: 1, AH: 1, FC: 30, RC: 90};
+
+for (const reconnect of [false, true]) {
+  test(`${reconnect ? 'reconnecting' : 'connecting'} cannot enable heat before a fresh BT`, async () => {
+    const clock = createVirtualClock();
+    const sim = new SimKaleido({clock});
+    const machine = new Machine({clock, openTransport: () => sim.open()});
+    const readings = sim.readings.bind(sim);
+    if (!reconnect) sim.readings = () => ({...readings(), BT: 'ERR'});
+    machine.set(PREHEAT);
+    machine.run();
+    try {
+      await clock.until(() => machine.connected, 10_000);
+      if (reconnect) {
+        await clock.until(() => sim.m.HS === 1, 10_000);
+        sim.close();
+        sim.readings = () => ({...readings(), BT: 'ERR'});
+        await clock.until(() => !machine.connected, 5000, 100);
+        await clock.until(() => machine.connected, 10_000, 100);
+        sim.accepted.length = 0;
+      }
+      await clock.advance(10_000);
+      assert.ok(!sim.accepted.some((a) => a.tag === 'HS' && a.value === 1));
+      assert.equal(sim.m.HS, 0);
+      sim.readings = readings;
+      await clock.until(() => sim.m.HS === 1, 10_000);
+    } finally {
+      const stopped = machine.stop();
+      await clock.advance(5000);
+      await stopped;
+    }
+  });
+}
+
+test('monitoring with no desired controls never writes controls, even without BT', async () => {
+  const clock = createVirtualClock();
+  const sim = new SimKaleido({clock});
+  const readings = sim.readings.bind(sim);
+  sim.readings = () => ({...readings(), BT: 'ERR'});
+  const machine = new Machine({clock, openTransport: () => sim.open()});
+  machine.run();
+  await clock.advance(15_000);
+  const stopped = machine.stop();
+  await clock.advance(5000);
+  await stopped;
+  assert.deepEqual(sim.accepted, []);
+});
+
+test('heater-off confirmation requires a fresh heater report, not unrelated replies', async () => {
+  const clock = createVirtualClock();
+  const machine = new Machine({clock, openTransport: async () => {}});
+  machine.onLine('{0,BT:185,HS:0,AH:0,HP:0}');
+  machine.heaterOff();
+  await clock.advance(2000);
+  machine.onLine('{0,FC:100}');
+  assert.equal(machine.heaterConfirmedOff(), false);
+  machine.onLine('{0,HS:0}');
+  assert.equal(machine.heaterConfirmedOff(), true);
+  machine.teardown();
+  machine.onLine('{0,AH:0,HP:0}');
+  assert.equal(machine.heaterConfirmedOff(), false);
+});
 
 // A deterministic "random" so drop-rate tests are repeatable.
 function seeded(seed) {

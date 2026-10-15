@@ -110,3 +110,28 @@ test('a second app can tell one is already running', () => {
   fs.writeFileSync(file, '999999'); // a crashed app's
   assert.equal(runningApp(file), null);
 });
+
+test('the app exiting between the liveness check and kill does not stop the guardian', async () => {
+  const {opts, calls} = setup({ageMs: 20_000});
+  opts.kill = () => {
+    calls.kill++;
+    throw Object.assign(new Error('process already exited'), {code: 'ESRCH'});
+  };
+  assert.equal(await guard(opts), 'the app stopped responding');
+  assert.equal(calls.stop, 1);
+  assert.match(calls.said[0], /Heater off/);
+});
+
+test('an emergency-stop exception is retried and a final failure is announced', async () => {
+  for (const recover of [true, false]) {
+    const {opts, calls} = setup({alive: false});
+    opts.stop = async () => {
+      calls.stop++;
+      if (!recover || calls.stop < 3) throw new Error('adapter unavailable');
+      return {ok: true, message: 'Heater off.'};
+    };
+    await guard(opts);
+    assert.equal(calls.stop, recover ? 3 : 5);
+    assert.match(calls.said[0], recover ? /Heater off/ : /Unplug the roaster/);
+  }
+});

@@ -8,6 +8,8 @@ Run `npm install` once, in this folder, then:
 
 - `node server/main.js` connects to the roaster (quit Artisan first) and serves the app at http://localhost:3100/. Click **Start** to turn on sound, then **Start preheating**.
 - `node server/main.js --sim --speed 20` does the same with a simulated roaster, so you can try the whole flow anywhere. Its roasts go to `logs-sim/`.
+- `npm run selftest` runs the empty-drum hardware checks without intentional heating. The drum and fans run, and the test prompts you to unplug and reconnect USB. Add `-- --no-cable` to skip the cable check.
+- `npm run selftest:heat` runs the full empty-drum hardware test, including heating. It asks for confirmation before firing the burner.
 - **Stopping.** The roaster has no panel, so the computer is the only way to turn the burner off:
   - **STOP** (top right, click twice) turns the heater off now. Mid-roast it also calls for the drop. The air and drum keep running to cool.
   - Quitting the server (Ctrl-C twice) or a crash also turns the heater off first. The session is saved, so restarting within 30 minutes resumes it, heat included. A roast resumes only if the app was off for less than 2 minutes. After longer than that, the app ends the roast and goes back to preheating, because the beans have sat without heat.
