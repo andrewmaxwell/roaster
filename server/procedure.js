@@ -3,6 +3,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import {fileURLToPath} from 'url';
 
 // A procedure with its variant applied. Variants are a shallow override of
 // top-level fields; a variant's `steps` replaces the whole list.
@@ -43,8 +44,10 @@ export function validate(p) {
   }
 }
 
-const here = path.dirname(new URL(import.meta.url).pathname);
-export const PROCEDURES_DIR = path.join(here, '../procedures');
+// (fileURLToPath, not .pathname: that leaves a space in the path as %20.)
+export const PROCEDURES_DIR = fileURLToPath(
+  new URL('../procedures', import.meta.url),
+);
 
 export function loadProcedure(bean, variant, dir = PROCEDURES_DIR) {
   const file = path.join(dir, `${bean}.json`);

@@ -146,6 +146,8 @@ test('weight out and tasting notes patch the files later', async () => {
     {date: '2026-10-06', text: 'Chocolate, a bit flat.'},
   ]);
   assert.throws(() => recorder.setWeightOut(99, 100), /no roast #99/);
+  assert.throws(() => recorder.setWeightOut(42, 'abc'), /grams/);
+  assert.equal(readAlog(`${base}.alog`).weight[1], 131.5, 'left as it was');
   await finish(ctx);
 });
 

@@ -284,7 +284,7 @@ export async function runSelfTest({machine, clock, log, ask, opts = {}}) {
         if (!ok) return [false, detail];
         if (!heated && !(latest?.BT >= 60)) return [true, 'nothing to cool'];
         const skip = offerSkip(
-          "Cooling to 60 °C with the air at 100%. Press Enter to finish now; the air and drum keep running until you run 'node kaleido/server/stop.js --all'.",
+          "Cooling to 60 °C with the air at 100%. Press Enter to finish now; the air and drum keep running until you run 'node server/stop.js --all'.",
         );
         const cooled = await waitFor(
           () => latest.BT < 60 || skip.skipped(),

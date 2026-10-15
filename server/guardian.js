@@ -3,7 +3,7 @@
 // its own when the computer goes quiet (self-test watchdog, 2026-10-04).
 //
 // main.js starts it (detached) when the app starts:
-//   node kaleido/server/guardian.js <app pid> <heartbeat file>
+//   node server/guardian.js <app pid> <heartbeat file>
 // The app writes its pid to the heartbeat file every 2 s and deletes it on a
 // clean exit.
 //   - file gone            → the app exited cleanly; the guardian exits too

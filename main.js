@@ -1,4 +1,4 @@
-// Kaleido roaster UI. The server (kaleido/server/main.js) does all the
+// Kaleido roaster UI. The server (server/main.js) does all the
 // roasting; this page shows what's happening, speaks, and sends the person's
 // actions back over the WebSocket.
 
@@ -622,7 +622,7 @@ $('beansOut').onclick = () => act('beansOut');
 $('stop').onclick = () => {
   if (ws?.readyState !== WebSocket.OPEN)
     return toast(
-      "The app server isn't running, so STOP can't reach the roaster. Run node kaleido/server/stop.js",
+      "The app server isn't running, so STOP can't reach the roaster. Run node server/stop.js",
     );
   if (confirmed('stop', renderStop)) act('emergencyStop');
 };
@@ -776,7 +776,9 @@ function renderChart() {
     if (b.drop) markers.push({x: rel(b.drop), label: 'drop', strong: true});
     // Just the next step: guides for all of them crowd into each other.
     const firedIdx = new Set(b.steps.map((s) => s.index));
-    const next = b.drop ? null : b.proc.steps.find((s, i) => !firedIdx.has(i));
+    const next = b.drop
+      ? null
+      : (b.proc.steps ?? []).find((s, i) => !firedIdx.has(i));
     if (next)
       guides.push({y: next.bt, label: `next: ${what(next)} at ${next.bt}°`});
     if (!b.drop)

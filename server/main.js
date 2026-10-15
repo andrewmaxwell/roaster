@@ -1,24 +1,24 @@
 // Entry point.
 //
 // App (the normal way to roast): serves the UI at http://localhost:3100/.
-//   node kaleido/server/main.js                 real roaster
-//   node kaleido/server/main.js --sim [--speed 10]   simulated roaster; the
+//   node server/main.js                 real roaster
+//   node server/main.js --sim [--speed 10]   simulated roaster; the
 //       UI gets buttons to pour beans in and discharge them. Roasts go to
-//       kaleido/logs-sim/ (gitignored), never to logs/.
+//       logs-sim/ (gitignored), never to logs/.
 //   --port 3100 to change the port.
 //
 // Monitor: connects and prints every reading. Against the real roaster this
 // never sets a control: it only does the handshake (PI, TU C, SC AR), polls
 // (RD A0), and sends CL AR on exit.
-//   node kaleido/server/main.js --monitor [--sim]
+//   node server/main.js --monitor [--sim]
 //
 // Autopilot: a whole simulated session (two batches, then shutdown) in the
 // terminal, with a simulated person charging, marking FC, and discharging.
-//   node kaleido/server/main.js --sim --autopilot [--speed 20]
+//   node server/main.js --sim --autopilot [--speed 20]
 //
 // Self-test: the empty-drum hardware checks in selftest.js. Asks before it
-// fires the burner. The report goes to kaleido/selftests/ (logs-sim/ for --sim).
-//   node kaleido/server/main.js --selftest [--no-heat] [--no-cable] [--sim]
+// fires the burner. The report goes to selftests/ (logs-sim/ for --sim).
+//   node server/main.js --selftest [--no-heat] [--no-cable] [--sim]
 
 import fs from 'fs';
 import {createClock} from './clock.js';
@@ -31,11 +31,14 @@ import {autopilot} from './autopilot.js';
 import {Recorder} from './recorder.js';
 import {runSelfTest} from './selftest.js';
 import readline from 'readline';
+import {fileURLToPath} from 'url';
 import {spawn} from 'child_process';
 import {HEARTBEAT_MS, runningApp} from './guardian.js';
 import {startApp} from './app.js';
 
-const LOGS_DIR = new URL('../logs/', import.meta.url).pathname;
+// (fileURLToPath, not .pathname: that leaves a space in the path as %20.)
+const here = (rel) => fileURLToPath(new URL(rel, import.meta.url));
+const LOGS_DIR = here('../logs/');
 const HEARTBEAT_FILE = `${LOGS_DIR}.heartbeat`;
 
 const args = process.argv.slice(2);
@@ -121,8 +124,8 @@ else if (MONITOR) {
     console.log(`If it isn't, delete ${HEARTBEAT_FILE} and start again.`);
     process.exit(1);
   }
-  const dir = new URL(SIM ? '../logs-sim/' : '../logs/', import.meta.url);
-  app = startApp({machine, clock, sim, port: PORT, logsDir: dir.pathname});
+  const logsDir = here(SIM ? '../logs-sim/' : '../logs/');
+  app = startApp({machine, clock, sim, port: PORT, logsDir});
 }
 machine.run();
 
@@ -141,7 +144,7 @@ function runAutopilot() {
     loadProcedure,
     nextRoastNumber: () => recorder.nextRoastNumber(),
   });
-  const dir = new URL('../logs-sim/', import.meta.url).pathname;
+  const dir = here('../logs-sim/');
   recorder = new Recorder({session, dir, beans});
   session.on('batchComplete', (b) => log(`wrote logs-sim/${b.file}.alog`));
   const at = (b) =>
@@ -217,8 +220,7 @@ async function runSelfTestCLI() {
       }),
     },
   });
-  const dir = new URL(SIM ? '../logs-sim/' : '../selftests/', import.meta.url)
-    .pathname;
+  const dir = here(SIM ? '../logs-sim/' : '../selftests/');
   fs.mkdirSync(dir, {recursive: true});
   const stamp = report.startedAt.slice(0, 16).replace(/[:T]/g, '-');
   const file = `${dir}selftest_${stamp}.json`;
@@ -239,7 +241,7 @@ async function runSelfTestCLI() {
 // nothing turns it off. So quitting or crashing turns the heater off first
 // (air and drum keep running while it's hot). Monitor mode never touches the
 // controls, so it doesn't start now. Not covered: kill -9, power loss, the
-// laptop sleeping (see caffeinate below); for those, kaleido/server/stop.js.
+// laptop sleeping (see caffeinate below); for those, server/stop.js.
 async function heaterOffAndExit(code) {
   const active =
     SELFTEST ||
@@ -261,7 +263,7 @@ async function heaterOffAndExit(code) {
     );
     if (hot)
       log(
-        'air and drum are still running to cool; when BT is under 60: node kaleido/server/stop.js --all',
+        'air and drum are still running to cool; when BT is under 60: node server/stop.js --all',
       );
   }
   // The heartbeat goes only once the heater is confirmed off (or nothing
@@ -336,7 +338,7 @@ if (app && !SIM) {
   beat();
   heartbeatTimer = setInterval(beat, HEARTBEAT_MS);
   const out = fs.openSync(`${LOGS_DIR}.guardian.log`, 'a');
-  const guardian = new URL('./guardian.js', import.meta.url).pathname;
+  const guardian = here('./guardian.js');
   spawn(process.execPath, [guardian, String(process.pid), heartbeatFile], {
     stdio: ['ignore', out, out],
     detached: true,

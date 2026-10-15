@@ -1,4 +1,4 @@
-// The app: serves the browser UI (kaleido/index.html, main.js, ui/) and talks
+// The app: serves the browser UI (index.html, main.js, ui/) and talks
 // to it over a WebSocket at /ws.
 //
 // server → browser:
@@ -22,6 +22,7 @@
 import fs from 'fs';
 import path from 'path';
 import http from 'http';
+import {fileURLToPath} from 'url';
 import express from 'express';
 import {WebSocketServer} from 'ws';
 import {Session} from './session.js';
@@ -29,7 +30,7 @@ import {Recorder} from './recorder.js';
 import {loadProcedure, rateOfRise, PROCEDURES_DIR} from './procedure.js';
 import {readAlog, channels} from './alog.js';
 
-const ROOT = new URL('..', import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const RESUME_WITHIN_MS = 30 * 60_000; // (a roast in progress: see session.js)
 const KEEP_IDLE_MS = 30 * 60_000; // readings kept for the chart with no session
 const readJSON = (p) => JSON.parse(fs.readFileSync(p, 'utf8'));
@@ -142,7 +143,7 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
     },
     selectBatch: ({bean, variant, weightIn}) =>
       need().selectBatch({bean, variant, weightIn: Number(weightIn) || null}),
-    setWeightIn: ({grams}) => need().setWeightIn(Number(grams)),
+    setWeightIn: ({grams}) => need().setWeightIn(grams),
     markFC: () => need().markFC(),
     markSC: () => need().markSC(),
     dropNow: () => need().dropNow(),
@@ -159,10 +160,14 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
         : machine.set({HS: 0, AH: 0, HP: 0}),
     pop: ({intensity}) => session?.addPop(intensity),
     setWeightOut: ({number, grams}) => {
-      recorder.setWeightOut(number, Number(grams));
+      need();
+      recorder.setWeightOut(number, grams);
       if (lastBatch?.number === number) lastBatch.weightOut = Number(grams);
     },
-    addNote: ({number, text}) => recorder.addNote(number, text),
+    addNote: ({number, text}) => {
+      need();
+      recorder.addNote(number, text);
+    },
     // Simulator only: stand in for the person at the roaster.
     simCharge: () => sim.chargeBeans(session?.next?.weightIn ?? 155),
     simDischarge: () => sim.discharge(),
@@ -231,7 +236,7 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
     res.json(list);
   });
   // A past roast's curve, relative to its charge, for the chart background.
-  // Reference roasts are the real ones in kaleido/logs, even in the sim.
+  // Reference roasts are the real ones in logs, even in the sim.
   app.get('/api/roast/:number', (req, res) => {
     const dir = path.join(ROOT, 'logs');
     const file = fs
@@ -286,7 +291,8 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
       let msg;
       try {
         msg = JSON.parse(raw);
-        const fn = ACTIONS[msg.action];
+        // (Own keys only: not 'constructor' or 'toString'.)
+        const fn = Object.hasOwn(ACTIONS, msg.action) && ACTIONS[msg.action];
         if (msg.type !== 'action' || !fn)
           throw new Error(`unknown action ${msg.action}`);
         fn(msg.args ?? {});
@@ -312,6 +318,12 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
       }
     } catch (err) {
       console.log(`couldn't resume the saved session: ${err.message}`);
+      // It may have failed partway through starting: drop it, or it would
+      // block "Start preheating" and skip the heater-off below.
+      session?.detach();
+      session?.removeAllListeners();
+      session = null;
+      recorder = null;
     }
   }
   // With no session, nothing should be heating. The roaster doesn't report

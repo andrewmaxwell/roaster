@@ -4,13 +4,15 @@ Kaleido - 2026 - Automated roast controller for a Kaleido M1 LITE that follows a
 
 ## Running it
 
-- `node kaleido/server/main.js` connects to the roaster (quit Artisan first) and serves the app at http://localhost:3100/. Click **Start** to turn on sound, then **Start preheating**.
-- `node kaleido/server/main.js --sim --speed 20` does the same with a simulated roaster, so you can try the whole flow anywhere. Its roasts go to `logs-sim/`.
+Run `npm install` once, in this folder, then:
+
+- `node server/main.js` connects to the roaster (quit Artisan first) and serves the app at http://localhost:3100/. Click **Start** to turn on sound, then **Start preheating**.
+- `node server/main.js --sim --speed 20` does the same with a simulated roaster, so you can try the whole flow anywhere. Its roasts go to `logs-sim/`.
 - **Stopping.** The roaster has no panel, so the computer is the only way to turn the burner off:
   - **STOP** (top right, click twice) turns the heater off now. Mid-roast it also calls for the drop. The air and drum keep running to cool.
   - Quitting the server (Ctrl-C twice) or a crash also turns the heater off first. The session is saved, so restarting within 30 minutes resumes it, heat included. A roast resumes only if the app was off for less than 2 minutes. After longer than that, the app ends the roast and goes back to preheating, because the beans have sat without heat.
   - A separate guardian process watches the app. If the app crashes, is killed, or hangs, the guardian turns the heater off within seconds and says so out loud. The roaster itself would keep heating.
-  - If something still seems wrong, run `node kaleido/server/stop.js` for heater off with the fans left running, or `--all` once the roaster is cool. The very last resort is unplugging the roaster.
+  - If something still seems wrong, run `node server/stop.js` for heater off with the fans left running, or `--all` once the roaster is cool. The very last resort is unplugging the roaster.
   - While the app runs, it keeps the Mac awake with `caffeinate`, but closing the lid can still put it to sleep. Leave the lid open.
 
 ## What it does
@@ -80,7 +82,7 @@ In Claude Code, ask "analyze roast #38" or "analyze my last Colombian Supremo ro
 ## Trust path (before real beans)
 
 1. **Simulator.** A thermal model fit to the existing logs, so BT responds to the burner and air like the real machine. Whole sessions run at 10× speed.
-2. **Hardware self-test** with an empty drum: `node kaleido/server/main.js --selftest` (Artisan closed). It takes about 30–40 minutes and asks before it fires the burner; `--no-heat` runs a quick version. It checks four things:
+2. **Hardware self-test** with an empty drum: `node server/main.js --selftest` (Artisan closed). It takes about 30–40 minutes and asks before it fires the burner; `--no-heat` runs a quick version. It checks four things:
    - each control is set, and the machine echoes the new value back
    - manual burner raises BT past the preheat SV, which proves the SV ceiling was lifted
    - the cooling fan and shutdown work

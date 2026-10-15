@@ -144,7 +144,9 @@ export class Recorder {
   // Weight out and tasting notes usually come after the record is closed,
   // so these patch the files (or the live batch, if it's still open).
   setWeightOut(number, grams) {
-    this.update(number, (b) => (b.weightOut = grams));
+    // (A NaN can't be written to the .alog.)
+    if (!(Number(grams) > 0)) throw new Error('weight out must be grams');
+    this.update(number, (b) => (b.weightOut = Number(grams)));
   }
 
   addNote(number, text, date = new Date()) {

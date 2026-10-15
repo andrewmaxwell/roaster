@@ -138,14 +138,20 @@ export class Machine extends EventEmitter {
     if (!this.connected) return;
     const now = this.clock.now();
     for (const k of CONTROLS) {
-      if (this.target(k) == null || !this.owns(k)) continue;
-      if (this.matches(k)) {
+      // Stuck is timed from when we start sending. A control that isn't
+      // ours yet (HP in auto mode) or waits its turn (AH for TS, HP for AH)
+      // isn't being sent, so its clock is reset: otherwise HP that sat in
+      // the PID's hands since a drop alarmed the moment shutdown took it back.
+      const waiting =
+        this.target(k) == null ||
+        !this.owns(k) ||
+        this.matches(k) ||
+        (k === 'AH' && this.target('TS') != null && !this.matches('TS')) ||
+        (k === 'HP' && this.state.AH !== 0);
+      if (waiting) {
         delete this.mismatchSince[k];
         continue;
       }
-      if (k === 'AH' && this.target('TS') != null && !this.matches('TS'))
-        continue;
-      if (k === 'HP' && this.state.AH !== 0) continue;
       this.mismatchSince[k] ??= now;
       if (now - this.mismatchSince[k] > this.stuckMs) {
         this.emit('stuck', {

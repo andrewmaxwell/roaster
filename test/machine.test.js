@@ -129,6 +129,28 @@ test('reports a control that never takes', async () => {
   await machine.stop();
 });
 
+test("time a control spent in the PID's hands never counts as stuck", async () => {
+  // The drop sets HP 0 and switches to auto mode at once. If that HP 0 is
+  // lost, HP still reads the old burner; "Done for today" minutes later
+  // takes HP back, and that must not alarm before HP 0 has even been sent.
+  const {clock, sim, machine} = await setup();
+  machine.set({TS: 240, HS: 1, AH: 0, HP: 15, FC: 30, RC: 90});
+  await until(clock, () => machine.settled(), 10_000);
+  sim.faults.ignore = ['HP'];
+  machine.set({HP: 0});
+  machine.set({TS: 185, HS: 0, AH: 1});
+  await until(clock, () => machine.settled() && sim.m.AH === 1, 10_000);
+  await clock.sleep(20_000);
+  sim.faults.ignore = [];
+  const stuck = [];
+  machine.on('stuck', (s) => stuck.push(s));
+  machine.set({HS: 0, AH: 0, HP: 0, FC: 100});
+  await until(clock, () => machine.settled(), 10_000);
+  assert.deepEqual(stuck, []);
+  assert.equal(sim.m.HP, 0);
+  await machine.stop();
+});
+
 test('polling keeps its place in a busy write queue', async () => {
   // Writes drain one per 100 ms; flood the queue faster than that, the way
   // resends pile up after a reconnect, and readings must still arrive.

@@ -2,7 +2,7 @@
 
 Controller for a Kaleido M1 LITE roaster. Read `README.md` first for what it does. This file covers how it's built, the hard-won facts about the machine, and the Claude Code workflows.
 
-Unlike the rest of the repo, this needs a local Node server (`serialport`, `ws`, `express` from the root `package.json`), because the server owns the serial port. The browser UI is a plain ES module page served by that server. Its one library, uPlot 1.6.32, is copied into `ui/vendor/` so the UI, STOP included, works with no internet. Keep it that way: no CDN imports here.
+It needs a local Node server (`serialport`, `ws`, `express` from `package.json`; `npm install` once), because the server owns the serial port. `npm test` runs the tests. The browser UI is a plain ES module page served by that server. Its one library, uPlot 1.6.32, is copied into `ui/vendor/` so the UI, STOP included, works with no internet. Keep it that way: no CDN imports here.
 
 **Never edit `server/*.js` while the app is running on the roaster** (check `ps`). **Test every behavior in the simulator first**, and replay changes against the real logs in `logs/`, checking how much earlier or later things happen than in the real roasts, not just whether they happen.
 
@@ -10,7 +10,7 @@ Unlike the rest of the repo, this needs a local Node server (`serialport`, `ws`,
 
 ```
 server/
-  main.js        node kaleido/server/main.js [--sim [--speed 10]]: the app at http://localhost:3100/
+  main.js        node server/main.js [--sim [--speed 10]]: the app at http://localhost:3100/
                  --monitor (read-only on real hardware), --sim --autopilot (terminal demo),
                  --selftest [--no-heat] [--no-cable]
   app.js         HTTP + WebSocket server for the UI; saves/resumes the session (logs/.session.json)
@@ -26,12 +26,12 @@ server/
   fitSim.js      fits physics.js to logs/ → simParams.json (rerun after adding logs)
   alog.js        .alog reader/writer; buildAlog turns a batch record into an Artisan profile
   alogTemplate.json  display + device setup from a real Artisan log (#37);
-                 regenerate with node kaleido/server/alog.js --make-template <alog>
+                 regenerate with node server/alog.js --make-template <alog>
   recorder.js    numbers roasts, writes .alog + .json sidecar, patches weight out / notes in later
   stop.js        emergency stop for when the app is gone: emergencyStop()
   guardian.js    separate process: heater off if the app dies or hangs
   selftest.js    empty-drum hardware checks (main.js --selftest)
-test/            node --test kaleido/test/*.test.js
+test/            node --test test/*.test.js
 index.html, main.js   browser UI: readouts, charts, side panel of actions, alarm banner
 ui/charts.js          three stacked uPlot charts (temps, RoR, burner/air) sharing time + cursor
 ui/vendor/            uPlot's ESM build and CSS
@@ -78,7 +78,7 @@ The M1 LITE is controlled only over USB, and it keeps heating with no computer: 
 
 - The UI's STOP (`session.emergencyStop()`: drop, then shutdown).
 - Ctrl-C (after a confirmation when a session is running), SIGTERM, uncaught exceptions: `heaterOffAndExit()` in `main.js` locks the heater off, waits for confirmation, and leaves air and drum running if BT is 60 °C or more or unknown.
-- `node kaleido/server/stop.js [--all]` for when the app is gone. It sends heater-off as soon as it connects, without waiting for BT; BT only decides the fans (unknown counts as hot).
+- `node server/stop.js [--all]` for when the app is gone. It sends heater-off as soon as it connects, without waiting for BT; BT only decides the fans (unknown counts as hot).
 - **`guardian.js`**, a detached process `main.js` starts in app mode (not `--sim`). It watches the app's pid and `logs/.heartbeat`, which the app rewrites with its pid every 2 s. If the app dies, it runs `emergencyStop()` on the freed port and says so with `say`; if the heartbeat is over 15 s old (hung), it kills the app first. Verified on the real roaster with kill -9: heater off within about 2 s. Its log is `logs/.guardian.log`.
   - The app deletes the heartbeat on a clean exit, only after the heater is confirmed off (else the guardian retries), and stops its timer first, or one last beat would make its own guardian think it crashed.
   - A heartbeat with another pid means a restarted app took over; the old guardian leaves without touching the port or file. So only one app may run: `main.js` refuses to start while the heartbeat names another live process (`runningApp()`).
@@ -96,7 +96,7 @@ After a discharge the drum restarts at the empty-drum steady state, and for 30 s
 
 ## UI
 
-- **Served by the app server**, not the repo's dev server (it needs the WebSocket). Don't add an `image.png`: the homepage would list a page that can't work on GitHub Pages.
+- **Served by the app server** (it needs the WebSocket), not as static files.
 - **Charts:** three plots, not a dual-axis chart. Colors follow the dataviz palette's order: BT 1 (blue), ET 2 (orange), burner 3 (aqua), air 4 (yellow), with dark-mode steps. The procedure's `reference.roast` BT (from `/api/roast/:n`, always from `logs/`, even in the sim) is a muted dashed line. While roasting, x is seconds since charge; otherwise the last 20 minutes. Only the *next* step and the drop get horizontal guides; more collide.
 - **Side panel:** rebuilt only when its inputs change (`renderSide`'s key). A rebuild mid-typing keeps form values and focus by element id, so per-batch inputs get per-batch ids (`weightOut-<n>`). Numbers that change every reading update in place by id (`preheatInfo`, `devInfo`, `dropEta`).
 - **Two clicks for anything irreversible:** STOP, second crack, drop now, done for today, and everything off need a second click within 3 s (`confirmed()`).
@@ -108,7 +108,7 @@ After a discharge the drum restarts at the empty-drum steady state, and for 30 s
 
 ## Self-test
 
-`node kaleido/server/main.js --selftest` (drum empty, Artisan closed), about 30–40 minutes: the connection and readings; every control echoing back with the heater off; the manual burner heating BT to 195 °C (proving the SV ceiling lifts); what a setpoint below BT does in manual mode (an observation); the PID taking over in auto mode; the cooling fan; a cable pull it asks for; a cool-down to 60 °C, then everything off.
+`node server/main.js --selftest` (drum empty, Artisan closed), about 30–40 minutes: the connection and readings; every control echoing back with the heater off; the manual burner heating BT to 195 °C (proving the SV ceiling lifts); what a setpoint below BT does in manual mode (an observation); the PID taking over in auto mode; the cooling fan; a cable pull it asks for; a cool-down to 60 °C, then everything off.
 
 The burner checks start only after Enter confirms the drum is empty. Ctrl-C turns the heater off and leaves air and drum running. `--no-heat` skips the burner checks and cool-down; Enter skips the cool-down. Long waits show a live status line whose estimates (`timeTo()` in `procedure.js`: linear heating, exponential cooling toward 25 °C) run a bit optimistic. The report in `selftests/` records each check, `sends` (writes per control; more than one per change means drops), and `observations`.
 

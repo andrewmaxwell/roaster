@@ -249,6 +249,20 @@ test('choosing the beans right after pouring them in still starts the roast', as
   await finish(ctx);
 });
 
+test('a weight in that is not a number is refused', async () => {
+  // (A NaN would make every write of the roast's .alog fail.)
+  const ctx = setup();
+  const {session} = ctx;
+  session.start();
+  session.selectBatch(ESPRESSO);
+  assert.throws(() => session.setWeightIn('abc'), /grams/);
+  assert.throws(() => session.setWeightIn(0), /grams/);
+  assert.equal(session.next.weightIn, 155);
+  session.setWeightIn('160.5');
+  assert.equal(session.next.weightIn, 160.5);
+  await finish(ctx);
+});
+
 test('second crack drops immediately', async () => {
   const ctx = setup();
   const {clock, sim, session, log} = ctx;

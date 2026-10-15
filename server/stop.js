@@ -3,9 +3,9 @@
 // turn the burner off short of unplugging it, and the roaster keeps heating
 // on its own if the computer goes quiet (self-test watchdog, 2026-10-04).
 //
-//   node kaleido/server/stop.js         heater off; air and drum keep running
+//   node server/stop.js         heater off; air and drum keep running
 //                                      (if it's hot) so the machine cools
-//   node kaleido/server/stop.js --all   everything off (once it's cool)
+//   node server/stop.js --all   everything off (once it's cool)
 //
 // If the app is still running, it holds the port, and this can't connect:
 // use the app's STOP button, or quit the app (Ctrl-C twice also turns the

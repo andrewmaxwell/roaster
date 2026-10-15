@@ -1,6 +1,6 @@
 // Fits physics.js parameters to the real roasts in logs/ by replaying each
 // log's burner/air through the model and minimizing the curve error.
-// Usage: node kaleido/server/fitSim.js   (writes server/simParams.json)
+// Usage: node server/fitSim.js   (writes server/simParams.json)
 //
 // The two parameter sets are fit separately: `empty` on each log's preheat
 // (first sample to charge), `roast` on each roast (charge to drop, starting

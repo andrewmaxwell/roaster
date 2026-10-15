@@ -68,6 +68,30 @@ test('a session saved as ready resumes as preheating', async () => {
   await stop();
 });
 
+test("a resume still works when the next beans' procedure is gone", async () => {
+  // Procedures get edited between batches; a renamed bean or variant must
+  // not cost the resume (or leave a session that never got started).
+  const state = saved('PREHEAT');
+  state.next = {bean: 'no_such_bean', variant: null, weightIn: 155};
+  const {app, machine, lines, stop} = start(state);
+  assert.ok(!lines.some((l) => /couldn't resume/.test(l)), lines.join('\n'));
+  const session = app.getSession();
+  assert.equal(session.phase, 'PREHEAT');
+  assert.equal(session.next, null, 'the beans have to be chosen again');
+  assert.equal(machine.desired.HS, 1, 'preheating');
+  await stop();
+});
+
+test('a resume that fails leaves no half-started session behind', async () => {
+  const state = saved('ROASTING'); // a roast with no batch can't resume
+  state.next = null;
+  const {app, machine, lines, stop} = start(state);
+  assert.ok(lines.some((l) => /couldn't resume/.test(l)), lines.join('\n'));
+  assert.equal(app.getSession(), null, 'a new session can be started');
+  assert.equal(machine.desired.HS, 0, 'nothing is heating');
+  await stop();
+});
+
 test('with nothing to resume, the heater is set off', async () => {
   const {app, machine, stop} = start(null);
   assert.equal(app.getSession(), null);

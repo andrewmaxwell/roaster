@@ -173,7 +173,9 @@ export class Session extends EventEmitter {
   setWeightIn(grams) {
     const target = this.batch && !this.batch.drop ? this.batch : this.next;
     if (!target) throw new Error('no batch to set the weight of');
-    target.weightIn = grams;
+    // (A NaN here would make every write of the roast's .alog fail.)
+    if (!(Number(grams) > 0)) throw new Error('weight in must be grams');
+    target.weightIn = Number(grams);
     this.emit('persist');
   }
 
@@ -325,7 +327,13 @@ export class Session extends EventEmitter {
     else if (this.phase === 'SHUTDOWN') this.checkShutdown(s);
     else if (this.phase === 'OFF') this.checkOff();
     if (this.batch?.drop) this.checkAfterDrop(s);
-    if (this.log.length % 20 === 0) this.emit('persist');
+    // (Counted separately: in OFF the log's length holds steady, and a
+    // multiple of 20 would save on every reading.)
+    this.samplesSinceSave = (this.samplesSinceSave ?? 0) + 1;
+    if (this.samplesSinceSave >= 20) {
+      this.samplesSinceSave = 0;
+      this.emit('persist');
+    }
   }
 
   onStuck({control, want, got}) {
@@ -334,6 +342,7 @@ export class Session extends EventEmitter {
   }
 
   onDisconnected() {
+    if (this.machine.stopped) return; // we closed it on the way out
     const urgent = this.phase === 'ROASTING' || !!this.batch?.drop;
     this.alert(
       urgent ? 'urgent' : 'warn',
@@ -686,8 +695,17 @@ export class Session extends EventEmitter {
     }
     if (saved.next) {
       const {bean, variant, weightIn} = saved.next;
-      const proc = this.loadProcedure(bean, variant);
-      this.next = {bean, variant, weightIn, proc};
+      // Procedures get edited between batches. One that no longer loads
+      // costs only the choice of beans, not the resume (and the roast).
+      try {
+        const proc = this.loadProcedure(bean, variant);
+        this.next = {bean, variant, weightIn, proc};
+      } catch (err) {
+        this.alert(
+          'warn',
+          `Couldn't load the procedure for the next beans (${err.message}). Choose them again.`,
+        );
+      }
     }
     // Old samples would make preheat look stable or fake a charge; start the
     // recent window fresh.

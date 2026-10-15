@@ -153,7 +153,7 @@ export function makeTemplate(d) {
 
 export const TEMPLATE_PATH = new URL('./alogTemplate.json', import.meta.url);
 
-// node kaleido/server/alog.js --make-template <some Artisan .alog>
+// node server/alog.js --make-template <some Artisan .alog>
 if (process.argv[2] === '--make-template') {
   const t = makeTemplate(readAlog(process.argv[3]));
   fs.writeFileSync(TEMPLATE_PATH, JSON.stringify(t, null, 1) + '\n');
