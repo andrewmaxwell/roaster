@@ -26,9 +26,9 @@ import {fileURLToPath} from 'url';
 import express from 'express';
 import {WebSocketServer} from 'ws';
 import {Session} from './session.js';
-import {Recorder, findRoast} from './recorder.js';
+import {Recorder} from './recorder.js';
 import {loadProcedure, rateOfRise, PROCEDURES_DIR} from './procedure.js';
-import {readAlog, channels} from './alog.js';
+import {findRoast, readRoast, indexAt} from './roastlog.js';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const RESUME_WITHIN_MS = 30 * 60_000; // (a roast in progress: see session.js)
@@ -248,20 +248,24 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
     } catch (err) {
       return res.status(404).json({error: err.message});
     }
-    const d = readAlog(path.join(dir, file));
-    const c = channels(d);
-    const [ci, , fci, , , , dpi] = d.timeindex;
-    const t0 = c.t[ci];
-    const end = dpi > 0 ? dpi : c.t.length - 1;
-    const keep = (xs) => xs.slice(ci, end + 1);
+    const r = readRoast(path.join(dir, file));
+    const {t} = r.samples;
+    // Charge to drop (the last reading at or before it), or to the end.
+    const reading = (ev) => {
+      const i = indexAt(t, ev?.t);
+      return i == null ? null : {t: t[i], BT: r.samples.BT[i]};
+    };
+    const from = indexAt(t, 0);
+    const end = r.drop ? indexAt(t, r.drop.t) : t.length - 1;
+    const keep = (xs) => xs.slice(from, end + 1);
     res.json({
-      number: Number(/^#(\d+)_/.exec(file)[1]),
+      number: r.roast,
       file,
-      t: keep(c.t).map((t) => t - t0),
-      BT: keep(c.BT),
-      ET: keep(c.ET),
-      fc: fci > 0 ? {t: c.t[fci] - t0, BT: c.BT[fci]} : null,
-      drop: dpi > 0 ? {t: c.t[dpi] - t0, BT: c.BT[dpi]} : null,
+      t: keep(t),
+      BT: keep(r.samples.BT),
+      ET: keep(r.samples.ET),
+      fc: reading(r.fc),
+      drop: reading(r.drop),
     });
   });
   // Only the page and its scripts: not the logs, the server's own code, or

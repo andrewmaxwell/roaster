@@ -17,7 +17,7 @@ Run `npm install` once, in this folder, then:
 
 ## What it does
 
-A local Node server connects to the roaster over USB serial. It runs a roast **procedure**: charge, temperature-triggered burner and air changes, and drop. A browser page at `localhost` shows a live chart with big buttons, and speaks to you when it needs your hands or ears. Each batch is saved as an Artisan-compatible `.alog` with a sidecar of extra info. Between sessions, you ask Claude Code to analyze the roasts and improve that bean's procedure.
+A local Node server connects to the roaster over USB serial. It runs a roast **procedure**: charge, temperature-triggered burner and air changes, and drop. A browser page at `localhost` shows a live chart with big buttons, and speaks to you when it needs your hands or ears. Each batch is saved as one JSON log: the curve, the events, and everything else. Between sessions, you ask Claude Code to analyze the roasts and improve that bean's procedure.
 
 It runs a whole session. Once a batch is dropped, it goes straight back to preheating. Meanwhile you pick the next bean, or tell it you're done for the day. When you're done, it cools the machine down and turns everything off.
 
@@ -47,7 +47,7 @@ There's one file per bean, `procedures/<bean>.json` (see `procedures/colombian_s
 - **reference**: the checkpoint times from a past roast you liked. They're shown on the chart but never chased.
 - **history**: every change, why it was made, and which roast motivated it.
 
-**Brew-method variants.** You can roast the same bean differently for espresso and for pour-over, without keeping two separate procedures. A procedure can have `variants`. Each variant overrides only the fields that differ. Usually that's just `drop`, and sometimes the steps after first crack. Everything up to first crack stays shared, so both variants add to the same history for that part of the roast. When you start a batch, you pick the bean and then a variant. The variant goes in the log filename (`#38_colombian_supremo_espresso_…`) and in the sidecar.
+**Brew-method variants.** You can roast the same bean differently for espresso and for pour-over, without keeping two separate procedures. A procedure can have `variants`. Each variant overrides only the fields that differ. Usually that's just `drop`, and sometimes the steps after first crack. Everything up to first crack stays shared, so both variants add to the same history for that part of the roast. When you start a batch, you pick the bean and then a variant. The variant goes in the log filename (`#38_colombian_supremo_espresso_…`) and in the log.
 
 These rules hold for every procedure:
 
@@ -66,18 +66,20 @@ For a new bean, tell Claude what it is. Claude researches it (Sweet Maria's or B
 
 Everything lives in `logs/` and is committed:
 
-- `#38_colombian_supremo_espresso_26-10-04_1100.alog`: the curve and events, and it opens in Artisan. Artisan will ask "Not a genuine Artisan profile. Load it anyway?", because these files weren't written by Artisan; click Yes. To add a weight out or tasting notes later, tell Claude or use the UI. They go into both files.
-- `#38_colombian_supremo_espresso_26-10-04_1100.json`: a sidecar file with everything else:
-  - bean slug, weight in and out, and the procedure version
-  - when each step fired, plus any overrides and alerts
+- `#38_colombian_supremo_espresso_26-10-04_1100.json`, one file per roast:
+  - bean, variant, weight in and out, and the procedure version
+  - when each step fired, plus first crack, the drop, and any overrides and alerts
+  - every reading (BT, ET, burner, air, and so on), from the end of the previous batch
   - detected pops (time and intensity; no audio is kept)
   - tasting notes
+
+  To add a weight out or tasting notes later, tell Claude or use the UI. Roasts #1–#37 were recorded in Artisan and converted to the same format.
 
 Roast numbers continue from the highest `#` in `logs/`.
 
 ## Improving a procedure
 
-In Claude Code, ask "analyze roast #38" or "analyze my last Colombian Supremo roasts". Claude reads the roast's sidecar and curve, the bean's earlier roasts, and your tasting notes. It reports how the roast compared with the reference: RoR crash or flick, development time and %, FC temp, and weight loss. Then it proposes edits to the procedure. See `CLAUDE.md`.
+In Claude Code, ask "analyze roast #38" or "analyze my last Colombian Supremo roasts". Claude reads the roast's log, the bean's earlier roasts, and your tasting notes. It reports how the roast compared with the reference: RoR crash or flick, development time and %, FC temp, and weight loss. Then it proposes edits to the procedure. See `CLAUDE.md`.
 
 ## Trust path (before real beans)
 
@@ -87,4 +89,4 @@ In Claude Code, ask "analyze roast #38" or "analyze my last Colombian Supremo ro
    - manual burner raises BT past the preheat SV, which proves the SV ceiling was lifted
    - the cooling fan and shutdown work
    - the program reconnects after the cable is pulled
-3. **First real batch.** Use a bean you've roasted many times, keep the STOP button in reach, and compare the result against its past Artisan logs.
+3. **First real batch.** Use a bean you've roasted many times, keep the STOP button in reach, and compare the result against its past logs.

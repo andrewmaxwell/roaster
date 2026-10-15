@@ -72,7 +72,7 @@ test('every procedure and variant is valid, for a bean in beans.json', () => {
       const matches = ref.file
         ? logs.filter((l) => l === ref.file)
         : logs.filter(
-            (l) => l.startsWith(`#${ref.roast}_`) && l.endsWith('.alog'),
+            (l) => l.startsWith(`#${ref.roast}_`) && l.endsWith('.json'),
           );
       assert.equal(
         matches.length,

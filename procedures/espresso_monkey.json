@@ -32,15 +32,15 @@
       "burner": 25
     }
   ],
-  "notes": "Mark FC when multiple pops occur close together; hold settings. Don't increase heat to chase a brief FC dip.",
+  "notes": "Press Second crack at the first pops of second crack: that is the drop (Sweet Maria's: stop at the start of second crack, never let it roll). The 208.5 drop is only a backstop if second crack isn't heard. Mark FC when multiple pops occur close together; hold settings. Rest at least 36 hours before pulling shots.",
   "variants": {
     "espresso": {
       "drop": {
-        "bt": 203.8
+        "bt": 208.5
       },
       "reference": {
         "roast": 25,
-        "file": "#25_espresso_monkey_26-08-21_1449.alog",
+        "file": "#25_espresso_monkey_26-08-21_1449.json",
         "fc": "6:18",
         "drop": "8:24"
       }
@@ -52,6 +52,12 @@
       "afterRoast": 41,
       "change": "Initial procedure, transcribed from roast #25: charge burner 55 / SV 230; burner 45 at 150, 40 + air 35 at 172, 35 at 193, 30 at 195, air 40 at 196, 25 at 198; espresso drop at 203.8. #25 is the reference (by file name: there are two #25s).",
       "why": "Both earlier roasts of this blend (#24, #25, 2026-08-21) were REALLY GOOD (inventory note), so this copies one rather than adjusting anything. #25 over #24: #24 charged at burner 65 (every other procedure charges at 45-55) and has no DROP mark, while #25 has a full record. #25: TP 112 at 0:38, FC 6:18 at 187.2, drop 8:24 at 204.1, development 2:06 (25%), shorter than our single origins (31-38%). The drop is 203.8 because a trigger needs 3 readings at or above it and lands 0.2-0.5 past, so it should drop near #25's 204.1. #24 was similar but faster (FC 5:41 at 188.6, peak 204.9 at 7:27, ~24%). Bean: Sweet Maria's Espresso Monkey Blend (total score 88.0), built for body with fruited-chocolate roast notes. Sweet Maria's recommends FC+ to light Vienna, ideally stopping at the start of second crack, and resting at least 36 hours before pulling shots; never Full French or Italian, as the Brazils in it turn ashy. Our 204 drops are lighter than that advice, but they're what tasted REALLY GOOD, so the roast copies them. Espresso variant only. One batch left."
+    },
+    {
+      "date": "2026-10-15",
+      "afterRoast": 41,
+      "change": "Espresso drop moved from 203.8 to the start of second crack: press Second crack at its first pops (it drops immediately), with the temperature drop raised to 208.5 as a backstop. Steps unchanged. Notes updated (second crack, 36 h rest).",
+      "why": "The user wants to try Sweet Maria's recommendation (FC+ to light Vienna, stopping at the start of second crack) and may like it even more than #24/#25. On this roaster's probe, second crack was marked at 206.0 (#28 Colombian Supremo), 206.8 (#11 Brazil Cerrado) and 202.1 (#13 10 Speed), so #25's 204.1 drop was just short of it and the start of second crack should come around 206-207: a little darker, with development about 30 s to a minute longer than #25's 2:06. The burner stays at 25% from 198 to the end, as in #25, so BT keeps climbing into second crack instead of stalling. 208.5 is 1.5-2.5 above the observed second-crack onsets, so if the pops are missed it still ends at light Vienna, not later. The reference stays #25 for the curve up to the drop."
     }
   ]
 }

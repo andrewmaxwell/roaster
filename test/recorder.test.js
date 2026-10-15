@@ -12,13 +12,7 @@ import {loadProcedure} from '../server/procedure.js';
 import {autopilot} from '../server/autopilot.js';
 import {EventEmitter} from 'events';
 import {fileURLToPath} from 'url';
-import {
-  readAlog,
-  writeAlog,
-  parseAlog,
-  toPython,
-  channels,
-} from '../server/alog.js';
+import {readRoast, writeRoast, indexAt} from '../server/roastlog.js';
 
 const preheat = JSON.parse(
   fs.readFileSync(new URL('../preheat.json', import.meta.url), 'utf8'),
@@ -36,7 +30,10 @@ const HOUR = 3600_000;
 function setup() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kaleido-'));
   // An older Artisan-only roast already in the directory.
-  fs.writeFileSync(path.join(dir, '#41_brazil_cerrado_26-10-01_0900.alog'), '');
+  fs.writeFileSync(
+    path.join(dir, '#41_brazil_cerrado_26-10-01_0900.json'),
+    '{}',
+  );
   const clock = createVirtualClock(Date.parse('2026-10-04T10:00:00'));
   const sim = new SimKaleido({clock});
   const machine = new Machine({clock, openTransport: () => sim.open()});
@@ -63,11 +60,19 @@ async function finish({clock, machine, dir}) {
   fs.rmSync(dir, {recursive: true});
 }
 
-test('Python literals round-trip', () => {
-  const v = {a: [1, 2.5, -1], b: "it's \\ ok\nyes", c: true, d: null, e: {}};
-  assert.deepEqual(parseAlog(toPython(v)), v);
-  // A truncated file fails instead of growing a string forever.
-  assert.throws(() => parseAlog("{'title': 'cut off"), /unterminated/);
+test('a roast log keeps its readings one column to a line', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kaleido-'));
+  const file = path.join(dir, '#1_x_26-10-15_0900.json');
+  const record = {
+    roast: 1,
+    notes: [{date: null, text: "it's\nfine"}],
+    samples: {t: [-1.5, 0, 1.5], BT: [185.2, null, 120]},
+  };
+  writeRoast(file, record);
+  assert.deepEqual(readRoast(file), record);
+  const lines = fs.readFileSync(file, 'utf8').split('\n');
+  assert.ok(lines.includes('    "BT": [185.2,null,120]'), lines.join('\n'));
+  fs.rmSync(dir, {recursive: true});
 });
 
 test('a roast is written as it happens, then finalized', async () => {
@@ -76,107 +81,94 @@ test('a roast is written as it happens, then finalized', async () => {
   autopilot(session, sim, clock, {batches: [ESPRESSO]});
   await clock.until(() => session.batch?.steps.length === 2, 2 * HOUR, 1500);
 
-  // Mid-roast: the files exist already, numbered after the highest roast.
+  // Mid-roast: the file exists already, numbered after the highest roast.
   const base = '#42_colombian_supremo_espresso_26-10-04_1000';
-  assert.deepEqual(files(dir).slice(1), [`${base}.alog`, `${base}.json`]);
-  let d = readAlog(path.join(dir, `${base}.alog`));
-  assert.equal(d.timeindex[6], 0, 'no drop yet');
-  const charged = d.timeindex[0];
-  assert.ok(
-    Math.abs(d.temp2[charged] - 185) < 1.5,
-    `CHARGE BT ${d.temp2[charged]}`,
-  );
+  assert.deepEqual(files(dir).slice(1), [`${base}.json`]);
+  let r = readRoast(path.join(dir, `${base}.json`));
+  assert.equal(r.drop, null, 'no drop yet');
+  const charged = indexAt(r.samples.t, 0);
+  assert.equal(r.samples.t[charged], 0, 'the charge is a reading');
+  assert.ok(Math.abs(r.charge.BT - 185) < 1.5, `CHARGE BT ${r.charge.BT}`);
 
   await clock.until(() => session.phase === 'OFF', 3 * HOUR, 5000);
-  d = readAlog(path.join(dir, `${base}.alog`));
-  const side = JSON.parse(
-    fs.readFileSync(path.join(dir, `${base}.json`), 'utf8'),
-  );
-  const [ci, dry, fc, , , , drop] = d.timeindex;
-  assert.ok(ci < dry && dry < fc && fc < drop);
-  assert.equal(d.computed.DROP_time, side.drop.t);
-  // Events sit on the reading that caused them, so both files agree.
-  assert.equal(d.computed.DROP_BT, side.drop.BT);
-  assert.equal(d.computed.FCs_BT, side.fc.BT);
-  assert.ok(d.computed.DROP_BT >= 207.4);
-  assert.equal(d.title, 'Colombian Supremo (espresso)');
-  assert.equal(d.roastbatchnr, 42);
-  assert.deepEqual(d.weight, [155, 0, 'g']);
-  assert.equal(d.signature, undefined, 'never claims to be from Artisan');
-  // The burner/air changes are there as Artisan events, in roast order,
-  // ending with the burner off at the drop.
-  const burner = d.specialevents
-    .map((i, k) => [i, d.specialeventstype[k], d.specialeventsStrings[k]])
-    .filter(([i, type]) => type === 3 && i > ci && i <= drop + 3)
-    .map(([, , s]) => s);
-  assert.deepEqual(burner, [
-    'Q55',
-    'Q45',
-    'Q40',
-    'Q35',
-    'Q30',
-    'Q25',
-    'Q15',
-    'Q0',
-  ]);
-  // The sidecar has what Artisan can't hold.
-  assert.equal(side.steps.length, 6);
-  assert.ok(side.steps.every((s, i) => i === 0 || s.t > side.steps[i - 1].t));
-  assert.equal(side.procedure.version, 2);
-  // And the simulator fit can read it like any other log.
-  assert.equal(channels(d).HP.length, d.timex.length);
+  r = readRoast(path.join(dir, `${base}.json`));
+  const S = r.samples;
+  assert.ok(0 < r.tp.t && r.tp.t < r.dry.t && r.dry.t < r.fc.t);
+  assert.ok(r.fc.t < r.drop.t && r.drop.t < r.beansOut.t);
+  // Every event sits on (or just after) the reading that caused it.
+  for (const ev of [r.tp, r.dry, ...r.steps])
+    assert.ok(S.t.includes(ev.t), `${ev.t} is a reading`);
+  for (const ev of [r.fc, r.drop])
+    assert.equal(S.BT[indexAt(S.t, ev.t)], ev.BT);
+  assert.ok(r.drop.BT >= 207.4);
+  assert.equal(r.dry.BT >= 152, true);
+  assert.equal(r.weightIn, 155);
+  assert.equal(r.weightOut, null);
+  assert.equal(r.source, 'app');
+  // The burner changes are all in the readings, in roast order, ending
+  // with the burner off at the drop (auto mode's HP is the PID's: skipped).
+  const end = indexAt(S.t, r.drop.t) + 3;
+  const burner = [];
+  for (let i = charged; i <= end; i++)
+    if (S.HP[i] !== S.HP[i - 1] && (S.AH[i] === 0 || S.AH[i - 1] === 0))
+      burner.push(S.HP[i]);
+  assert.deepEqual(burner, [55, 45, 40, 35, 30, 25, 15, 0]);
+  for (const k of ['BT', 'ET', 'HP', 'FC', 'RC', 'TS', 'AT', 'AH', 'HS', 'CS'])
+    assert.equal(S[k].length, S.t.length, k);
+  assert.equal(r.steps.length, 6);
+  assert.ok(r.steps.every((s, i) => i === 0 || s.t > r.steps[i - 1].t));
+  assert.equal(r.procedure.version, 2);
   await finish(ctx);
 });
 
-test('weight out and tasting notes patch the files later', async () => {
+test('weight out and tasting notes patch the log later', async () => {
   const ctx = setup();
   const {dir, clock, sim, session, recorder} = ctx;
   autopilot(session, sim, clock, {batches: [ESPRESSO]});
   await clock.until(() => session.phase === 'OFF', 3 * HOUR, 5000);
+  const file = path.join(
+    dir,
+    '#42_colombian_supremo_espresso_26-10-04_1000.json',
+  );
+  const before = readRoast(file);
   recorder.setWeightOut(42, 131.5);
   recorder.addNote(42, 'Chocolate, a bit flat.', new Date('2026-10-06'));
-  const base = path.join(dir, '#42_colombian_supremo_espresso_26-10-04_1000');
-  const d = readAlog(`${base}.alog`);
-  assert.deepEqual(d.weight, [155, 131.5, 'g']);
-  assert.equal(d.computed.weight_loss, 15.2);
-  assert.equal(d.cuppingnotes, 'Chocolate, a bit flat.');
-  const side = JSON.parse(fs.readFileSync(`${base}.json`, 'utf8'));
-  assert.equal(side.weightOut, 131.5);
-  assert.deepEqual(side.notes, [
+  const r = readRoast(file);
+  assert.equal(r.weightOut, 131.5);
+  assert.deepEqual(r.notes, [
     {date: '2026-10-06', text: 'Chocolate, a bit flat.'},
   ]);
+  assert.deepEqual(r.samples, before.samples, 'readings untouched');
   assert.throws(() => recorder.setWeightOut(99, 100), /no roast #99/);
   assert.throws(() => recorder.setWeightOut(42, 'abc'), /grams/);
-  assert.equal(readAlog(`${base}.alog`).weight[1], 131.5, 'left as it was');
+  assert.equal(readRoast(file).weightOut, 131.5, 'left as it was');
   await finish(ctx);
 });
 
-test('notes on an older Artisan roast add up instead of replacing each other', () => {
+test('notes on an older Artisan roast add up, and leave the rest alone', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kaleido-'));
-  const base = path.join(dir, '#7_ethiopiques_v2_26-06-14_1418');
+  const name = '#7_ethiopiques_v2_26-06-14_1418.json';
   // ('#' would start a URL fragment, so build the path from the folder.)
   const logs = fileURLToPath(new URL('../logs/', import.meta.url));
-  fs.copyFileSync(
-    path.join(logs, '#7_ethiopiques_v2_26-06-14_1418.alog'),
-    `${base}.alog`,
-  );
-  const d0 = readAlog(`${base}.alog`);
-  d0.cuppingnotes = 'Typed into Artisan.';
-  writeAlog(`${base}.alog`, d0);
-  const session = new EventEmitter();
-  const recorder = new Recorder({session, dir, beans});
+  fs.copyFileSync(path.join(logs, name), path.join(dir, name));
+  const before = readRoast(path.join(dir, name));
+  const recorder = new Recorder({session: new EventEmitter(), dir, beans});
   recorder.addNote(7, 'Blueberry.', new Date('2026-10-05'));
   recorder.setWeightOut(7, 130);
   recorder.addNote(7, 'Even better a week on.', new Date('2026-10-12'));
-  const d = readAlog(`${base}.alog`);
-  assert.equal(
-    d.cuppingnotes,
-    'Typed into Artisan.\nBlueberry.\nEven better a week on.',
+  const r = readRoast(path.join(dir, name));
+  assert.deepEqual(
+    r.notes.map((n) => n.text),
+    [
+      ...before.notes.map((n) => n.text),
+      'Blueberry.',
+      'Even better a week on.',
+    ],
   );
-  assert.equal(d.weight[1], 130);
-  const side = JSON.parse(fs.readFileSync(`${base}.json`, 'utf8'));
-  assert.equal(side.notes.length, 3);
-  assert.equal(side.weightOut, 130);
+  assert.equal(r.weightOut, 130);
+  const {notes, weightOut, ...rest} = r;
+  const {notes: n0, weightOut: w0, ...rest0} = before;
+  assert.deepEqual(rest, rest0);
   fs.rmSync(dir, {recursive: true});
 });
 
@@ -187,18 +179,14 @@ test('a roast number used twice has to be given by file name', () => {
   const names = ['#7_ethiopiques_v2_26-06-14_1418', '#7_other_26-06-15_0900'];
   for (const n of names)
     fs.copyFileSync(
-      path.join(logs, '#7_ethiopiques_v2_26-06-14_1418.alog'),
-      path.join(dir, `${n}.alog`),
+      path.join(logs, '#7_ethiopiques_v2_26-06-14_1418.json'),
+      path.join(dir, `${n}.json`),
     );
   const recorder = new Recorder({session: new EventEmitter(), dir, beans});
   assert.throws(() => recorder.setWeightOut(7, 130), /ambiguous.*file name/);
   recorder.setWeightOut(names[1], 130);
-  assert.equal(readAlog(path.join(dir, `${names[0]}.alog`)).weight[1], 0);
-  assert.equal(readAlog(path.join(dir, `${names[1]}.alog`)).weight[1], 130);
-  const side = JSON.parse(
-    fs.readFileSync(path.join(dir, `${names[1]}.json`), 'utf8'),
-  );
-  assert.equal(side.roast, 7);
+  assert.equal(readRoast(path.join(dir, `${names[0]}.json`)).weightOut, null);
+  assert.equal(readRoast(path.join(dir, `${names[1]}.json`)).weightOut, 130);
   assert.throws(() => recorder.addNote('../x', 'no'), /no roast/);
   fs.rmSync(dir, {recursive: true});
 });

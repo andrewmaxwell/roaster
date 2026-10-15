@@ -24,10 +24,8 @@ server/
   sim.js         simulated roaster: same interface as port.js, plus the machine's quirks
   physics.js     the thermal model sim.js runs
   fitSim.js      fits physics.js to logs/ → simParams.json (rerun after adding logs)
-  alog.js        .alog reader/writer; buildAlog turns a batch record into an Artisan profile
-  alogTemplate.json  display + device setup from a real Artisan log (#37);
-                 regenerate with node server/alog.js --make-template <alog>
-  recorder.js    numbers roasts, writes .alog + .json sidecar, patches weight out / notes in later
+  roastlog.js    the roast log format (one .json per roast): read, write, find by number
+  recorder.js    numbers roasts, writes each one's log, patches weight out / notes in later
   stop.js        emergency stop for when the app is gone: emergencyStop()
   guardian.js    separate process: heater off if the app dies or hangs
   selftest.js    empty-drum hardware checks (main.js --selftest)
@@ -41,12 +39,12 @@ preheat.json          preheat settings + stability rule, shared by every bean
 procedures/<bean>.json
 beans.json            canonical bean slugs → name, supplier, old filename aliases
 inventory.json        green beans on hand, in batches, by bean slug (Claude keeps it current)
-logs/                 .alog + .json sidecar per roast
+logs/                 one .json per roast (roastlog.js)
 logs-sim/             what --sim runs write (gitignored)
 selftests/            self-test reports from the real roaster
 ```
 
-Still unchecked by hand: opening one of our `.alog`s in Artisan, and the mic detector against real cracks. There's deliberately no `analyze.js`: Claude analyzes roasts directly (see below). Write one only if analyses start disagreeing or comparing many roasts gets slow.
+Still unchecked by hand: the mic detector against real cracks. There's deliberately no `analyze.js`: Claude analyzes roasts directly (see below). Write one only if analyses start disagreeing or comparing many roasts gets slow.
 
 ## Talking to the machine (`machine.js`)
 
@@ -104,7 +102,7 @@ After a discharge the drum restarts at the empty-drum steady state, and for 30 s
 - **WebSocket origin:** only `localhost`, `127.0.0.1`, `[::1]`, or none (non-browser clients). Browsers let any site open a WebSocket to localhost; checking the Origin's host (not Host) also covers DNS rebinding.
 - **Not live:** if the server or roaster drops out, the readouts fade; a lost server also shows a banner, and actions toast instead of silently failing.
 - In `--sim`, "Pour beans in" and "Open the door" stand in for the person.
-- **Crack listening** (hints only: never marks FC/SC or changes the roast; no audio stored) high-passes the mic at 1.5 kHz and reports transients 12× above an adaptive floor, at most one per 0.25 s. One sound rings for a while: in #38, three "pops" 0.1 s apart at 177 °C would have hinted a minute before FC. Pops during the app's own speech or chimes (plus 0.3 s; `busy()` in `ui/sound.js`) are ignored. Three pops within 8 s show a hint banner. Pops are logged in the sidecar and drawn as ticks on the chart.
+- **Crack listening** (hints only: never marks FC/SC or changes the roast; no audio stored) high-passes the mic at 1.5 kHz and reports transients 12× above an adaptive floor, at most one per 0.25 s. One sound rings for a while: in #38, three "pops" 0.1 s apart at 177 °C would have hinted a minute before FC. Pops during the app's own speech or chimes (plus 0.3 s; `busy()` in `ui/sound.js`) are ignored. Three pops within 8 s show a hint banner. Pops are logged in the roast's log and drawn as ticks on the chart.
 
 ## Self-test
 
@@ -136,16 +134,9 @@ Verified on hardware (the old `roast/` project, the self-tests) and in Artisan's
 
 ## Files
 
-**`.alog`** is a Python-literal dict (`ast.literal_eval` reads it); `alog.js` reads and writes it. Everything but the per-roast fields comes from `server/alogTemplate.json`, so ours match the user's Artisan logs, including the extra devices `{3}`/SV/`{1}` and `{0}`/AT/AH. Per-roast fields:
-- `timex`, `temp1` (ET), `temp2` (BT): samples every 1.5 s from the end of the previous batch's record, so the preheat is included. `-1` means no reading.
-- `extratemp1`: burner, SV, drum. `extratemp2`: air, AT, AH.
-- `timeindex`: sample indices for `[CHARGE, DRY, FCs, FCe, SCs, SCe, DROP, COOL]`, 0 = unset. Each event sits on the last reading at or before it, so `computed` and the sidecar agree. DRY is Artisan's rule: the first BT ≥ `phases[1]` (152) after the TP.
-- `specialevents*`: every air, drum, or manual burner change (types 0 air, 1 drum, 3 burner; value `pct/10 + 1`; string `Q<pct>`), on the reading where the roaster confirmed it, about 1.5 s after the sidecar's trigger. Burner changes in auto mode are skipped (HP is the PID's duty there), except the drop's burner-off.
-- `computed`: main times and temperatures relative to charge, plus weights. Artisan recomputes the rest on save.
+**Roast logs** `#N_….json` (`server/roastlog.js`, which describes every field): one file per roast with the bean slug, variant, procedure version and contents, weights, charge/TP/dry/FC/SC/drop/beans-out, every step, override, and alert, pops, tasting notes, and every reading (`samples`: one array per channel, `t` in seconds since charge, negative during the preheat before it, `null` for no reading). Event times are seconds since charge too, to the millisecond: a step's `t` and `BT` are its triggering reading; `fc` and `sc` are button presses, a moment after their reading; `drop` has a `reason` (temperature, button, second crack, emergency stop, interrupted). `indexAt(samples.t, ev.t)` finds an event's reading. Dry end is Artisan's rule: the first BT ≥ 152 after the TP.
 
-Artisan validates loaded files with pydantic against `ProfileData` in `~/artisan/src/artisanlib/atypes.py`; to check one the same way, stub out `PyQt6.QtCore.QDateTime` and `plus.stock` and run `TypeAdapter(ProfileData).validate_python(d)`. Our files deliberately have no `signature`, version, or hash, so Artisan asks "Not a genuine Artisan profile. Load it anyway?" Don't copy a signature from a real log to silence that; it would fake an authenticity check. A patched old Artisan log reads "Modified Artisan profile," which is accurate too.
-
-**Sidecar** `#N_….json`: bean slug, variant, procedure version and contents, weights, charge/TP/FC/SC/drop/beans-out, every step, override, and alert, pops, and tasting notes, all in seconds since charge. A step's `t` and `BT` are its triggering reading; `fc` and `sc` are button presses; `drop` has a `reason` (temperature, button, second crack, emergency stop, interrupted).
+Roasts #1-#37 were recorded by Artisan (`source: "artisan"`): their events come from Artisan's marks, `tp` from its computed TP, and `artisan` keeps Artisan's own numbers (`computed`, `phases`, every control change it logged as `events`, the between-batch `bbp_*` fields). Their extra channels (burner, air, setpoint...) were sampled up to 0.4 s off the BT/ET times; the logs put them on the BT/ET times, as everything that read them did. Four of them (#7, #7, #8, #12) have stretches with no readings. #38-#41 (`source: "app"`) were the app's .alog + sidecar; their step and event times were restored to the millisecond from the .alog, since the sidecar had rounded them to 0.1 s. The .alog files and their reader are in git history (before 2026-10-15) if Artisan is ever needed again.
 
 **Naming:** `#N_<bean>_<variant>_YY-MM-DD_HHMM`, from the record's start time; N continues from the highest `#` in the folder. Written atomically on charge, every 30 s, on every event, and when the record closes.
 
@@ -157,16 +148,15 @@ A procedure's `variants` (e.g. `espresso`, `pourover`) shallowly override top-le
 
 ## Analyzing a roast
 
-Resolve bean names through `beans.json` (old filenames spell them inconsistently). Roast numbers aren't unique in old logs (#7 and #25 appear twice); go by filename when ambiguous. `recorder.js` refuses an ambiguous number and takes the file name instead (`findRoast()`).
+Resolve bean names through `beans.json` (old filenames spell them inconsistently). Roast numbers aren't unique in old logs (#7 and #25 appear twice); go by filename when ambiguous. `findRoast()` in `roastlog.js` refuses an ambiguous number and takes the file name instead.
 
 1. Get the facts:
-   - **App roasts (#38 on):** read the sidecar (about 5 KB).
-   - **The curve:** don't read the `.alog` raw (90–130 KB of arrays). Use `readAlog()` and `channels()` from `server/alog.js` in a one-off script: `t` (seconds since the log started), `BT`, `ET`, `HP`, `FC`, and so on, plus `timeindex`.
-   - **Older Artisan roasts:** events from `timeindex`, weights from `weight` (`[in, out, unit]`), Artisan's numbers from `computed`, and any notes or weight out from a small sidecar.
+   - **Read the log with `readRoast()`** from `server/roastlog.js` in a one-off script, never raw (each is 30-130 KB, mostly `samples`): print everything but `samples`, then compute from the columns.
+   - **Older Artisan roasts** have no `procedure` or `steps`; what was done is in `artisan.events` (control changes) and the HP/FC columns.
 2. Compute these the same way every time:
-   - **Phases** from charge: drying to DRY (first BT ≥ 152 °C after TP), Maillard to FC, development to the drop.
+   - **Phases** from charge: drying to DRY (the log's `dry`: first BT ≥ 152 °C after TP; Artisan roasts used their own threshold, in `artisan.phases[1]`), Maillard to FC, development to the drop.
    - **Development %** = (drop − FC) / drop × 100, as the UI shows.
-   - **RoR** = `rateOfRise()` from `server/procedure.js` (30 s least-squares slope, °C/min, as the app shows). It takes `{t, BT}` with `t` in **ms**. Report it every 30 s from 1 minute after TP to the drop.
+   - **RoR** = `rateOfRise()` from `server/procedure.js` (30 s least-squares slope, °C/min, as the app shows). It takes `{t, BT}` with `t` in **ms**: the log's `samples.t` × 1000. Report it every 30 s from 1 minute after TP to the drop.
    - **Crash and flick:** consecutive 30 s readings jump about ±1.5 °C/min from noise alone, so judge against the bean's earlier roasts. Colombian Supremo (#30, #31, #37, #38) always falls 3–4 °C/min in the minute after FC, then rises 1.5–2 °C/min around 8.5–9 minutes. Call out only what's clearly bigger than the bean's usual.
    - **Weight loss** = (in − out) / in × 100.
 3. Compare with the bean's earlier roasts (same variant for drop and development) and the procedure's `reference`.
@@ -179,8 +169,8 @@ The user mentions drinks in passing ("a latte with 11 g of the Colombian Supremo
 
 - **Find the roast** by bean (through `beans.json`) and roast date. If several roasts of that bean share the date, put the note on each, say in it that which one is unknown, and ask; once known, remove it from the others.
 - **Write a dated entry:** the drink, grams of each bean, blend partners with their roast numbers, days since roasting, and the user's own words about taste and grind. A blend's note goes on every roast in it.
-- **Use `Recorder.addNote(roast, text, date)`** (`roast`: the number, or the file name for #7 and #25) (and `setWeightOut()` for weights) from `server/recorder.js` in a one-off script, with a stub session (`new EventEmitter()`) and `dir` set to `logs/`. It updates the sidecar and mirrors into the `.alog`'s `cuppingnotes` and `weight`. An older Artisan roast gets a small sidecar on its first note (any notes typed into Artisan become its first). Don't edit the files by hand.
-- **Check that nothing else changed** (parse the old and new `.alog` and compare), then commit the logs.
+- **Use `Recorder.addNote(roast, text, date)`** (`roast`: the number, or the file name for #7 and #25) (and `setWeightOut()` for weights) from `server/recorder.js` in a one-off script, with a stub session (`new EventEmitter()`) and `dir` set to `logs/`. It rewrites the roast's log with the note added. Don't edit the files by hand.
+- **Check that nothing else changed** (compare the old and new log, `samples` included), then commit the logs.
 
 ## Green bean inventory
 

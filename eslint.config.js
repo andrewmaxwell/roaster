@@ -19,7 +19,10 @@ export default [
         'warn',
         {destructuring: 'all', ignoreReadBeforeAssign: true},
       ],
-      'no-unused-vars': ['error', {caughtErrors: 'none'}],
+      'no-unused-vars': [
+        'error',
+        {caughtErrors: 'none', ignoreRestSiblings: true},
+      ],
     },
   },
   // The browser UI.

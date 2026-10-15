@@ -192,7 +192,7 @@ export class Session extends EventEmitter {
   setWeightIn(grams) {
     const target = this.batch && !this.batch.drop ? this.batch : this.next;
     if (!target) throw new Error('no batch to set the weight of');
-    // (A NaN here would make every write of the roast's .alog fail.)
+    // (A NaN here would be saved as null: the weight lost.)
     if (!(Number(grams) > 0)) throw new Error('weight in must be grams');
     target.weightIn = Number(grams);
     this.emit('persist');

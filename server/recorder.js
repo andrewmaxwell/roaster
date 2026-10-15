@@ -1,9 +1,8 @@
-// Writes each batch to logs/ as an Artisan .alog plus a .json sidecar with
-// everything Artisan has no place for (procedure, step timings, overrides,
-// alerts, tasting notes). Files are rewritten every 30 s during a roast and
-// on every event, so a crash still leaves a usable log.
+// Writes each batch to logs/ as one JSON file (roastlog.js): the procedure,
+// events, steps, overrides, alerts, tasting notes, and every reading. It's
+// rewritten every 30 s during a roast and on every event, so a crash still
+// leaves a usable log.
 //
-//   #38_colombian_supremo_espresso_26-10-04_1103.alog
 //   #38_colombian_supremo_espresso_26-10-04_1103.json
 //
 // Roast numbers continue from the highest # in the directory.
@@ -15,18 +14,17 @@
 
 import fs from 'fs';
 import path from 'path';
-import crypto from 'crypto';
-import {buildAlog, readAlog, writeAlog, TEMPLATE_PATH} from './alog.js';
+import {CHANNELS, readRoast, writeRoast, roastPath} from './roastlog.js';
 
 const WRITE_EVERY_MS = 30_000;
+// Dry end, as Artisan has it: the first BT at or above this after the TP.
+const DRY_BT = 152;
 const pad = (n) => String(n).padStart(2, '0');
-const round1 = (x) => (x == null ? x : Math.round(x * 10) / 10);
+const round = (x, d) => (x == null ? x : Math.round(x * 10 ** d) / 10 ** d);
 
 export class Recorder {
   constructor({session, dir, beans = {}}) {
     Object.assign(this, {session, dir, beans});
-    this.template = JSON.parse(fs.readFileSync(TEMPLATE_PATH, 'utf8'));
-    this.batchPos = 0;
     this.lastNumber = 0;
     this.lastWrite = 0;
     fs.mkdirSync(dir, {recursive: true});
@@ -61,29 +59,14 @@ export class Recorder {
     const time = `${pad(d.getHours())}${pad(d.getMinutes())}`;
     const parts = [`#${b.number}`, b.bean, b.variant, date, time];
     b.file = parts.filter(Boolean).join('_');
-    b.uuid = crypto.randomUUID().replace(/-/g, '');
-    b.batchPos = ++this.batchPos;
     this.write(b);
-  }
-
-  paths(file) {
-    const base = path.join(this.dir, file);
-    return {alog: `${base}.alog`, json: `${base}.json`};
   }
 
   write(b) {
     if (!b?.file) return;
     this.lastWrite = b.samples.at(-1)?.t ?? 0;
     try {
-      const {alog, json} = this.paths(b.file);
-      const alogData = buildAlog(b, {
-        beanName: this.beanName(b.bean),
-        batchPos: b.batchPos,
-        uuid: b.uuid,
-        template: this.template,
-      });
-      writeAlog(alog, alogData);
-      writeJSON(json, this.sidecar(b));
+      writeRoast(path.join(this.dir, `${b.file}.json`), this.record(b));
       this.failing = false;
     } catch (err) {
       this.failed(err);
@@ -105,19 +88,29 @@ export class Recorder {
     return this.beans[slug]?.name ?? slug;
   }
 
-  // Everything about the roast that isn't in the .alog. Times are seconds
-  // since charge.
-  sidecar(b) {
+  // The roast as roastlog.js describes it. Times are seconds since charge,
+  // to the millisecond like the readings, so each event sits exactly on (or
+  // just after) the reading it came from.
+  record(b) {
     const c = b.charge.t;
-    const at = (m) => m && {...m, t: round1((m.t - c) / 1000)};
+    const sec = (t) => round((t - c) / 1000, 3);
+    const at = (m) => m && {...m, t: sec(m.t)};
     const {proc} = b;
+    const S = b.samples;
+    const samples = {t: S.map((s) => sec(s.t))};
+    for (const k of [...CHANNELS, 'HS', 'CS'])
+      samples[k] = S.map((s) => s[k] ?? null);
+    let dry = null;
+    if (b.tp)
+      dry = S.find(
+        (s) => s.t >= b.tp.t && (!b.drop || s.t <= b.drop.t) && s.BT >= DRY_BT,
+      );
     return {
       roast: b.number,
       bean: b.bean,
       beanName: this.beanName(b.bean),
       variant: b.variant,
-      alog: `${b.file}.alog`,
-      startedAt: new Date(b.samples[0].t).toISOString(),
+      startedAt: new Date(S[0].t).toISOString(),
       chargedAt: new Date(c).toISOString(),
       weightIn: b.weightIn ?? null,
       weightOut: b.weightOut ?? null,
@@ -127,8 +120,9 @@ export class Recorder {
         steps: proc.steps,
         drop: proc.drop,
       },
-      charge: {BT: round1(b.charge.BT)},
+      charge: {BT: round(b.charge.BT, 1)},
       tp: at(b.tp),
+      dry: dry ? {t: sec(dry.t), BT: dry.BT} : null,
       fc: at(b.fc),
       sc: at(b.sc),
       drop: at(b.drop),
@@ -138,15 +132,17 @@ export class Recorder {
       alerts: b.alerts.map(at),
       pops: (b.pops ?? []).map(at),
       notes: b.notes ?? [],
+      source: 'app',
+      samples,
     };
   }
 
   // Weight out and tasting notes usually come after the record is closed,
   // so these patch the files (or the live batch, if it's still open).
   // `roast` is a roast number, or the file name when the number is shared
-  // (old logs have two #7s and two #25s; see findRoast).
+  // (old logs have two #7s and two #25s; see findRoast in roastlog.js).
   setWeightOut(roast, grams) {
-    // (A NaN can't be written to the .alog.)
+    // (JSON would quietly save a NaN as null.)
     if (!(Number(grams) > 0)) throw new Error('weight out must be grams');
     this.update(roast, (b) => (b.weightOut = Number(grams)));
   }
@@ -162,56 +158,9 @@ export class Recorder {
       change(live);
       return this.write(live);
     }
-    const file = findRoast(this.dir, roast);
-    const number = Number(/^#(\d+)_/.exec(file)[1]);
-    const {alog, json} = this.paths(file.slice(0, -'.alog'.length));
-    const d = readAlog(alog);
-    // An older Artisan-only roast gets a sidecar now, holding just these, so
-    // its notes add up instead of each one replacing the last in the .alog.
-    // Any cupping notes already typed into Artisan become the first note.
-    const side = fs.existsSync(json)
-      ? JSON.parse(fs.readFileSync(json, 'utf8'))
-      : {
-          roast: number,
-          alog: file,
-          notes: d.cuppingnotes ? [{date: null, text: d.cuppingnotes}] : [],
-        };
-    change(side);
-    writeJSON(json, side);
-    // Mirror into the .alog fields Artisan shows.
-    if (side.weightOut != null) {
-      d.weight[1] = side.weightOut;
-      d.computed.weightout = side.weightOut;
-      const wIn = d.weight[0];
-      if (wIn)
-        d.computed.weight_loss = round1(((wIn - side.weightOut) / wIn) * 100);
-    }
-    if (side.notes?.length)
-      d.cuppingnotes = side.notes.map((n) => n.text).join('\n');
-    writeAlog(alog, d);
+    const file = roastPath(this.dir, roast);
+    const record = readRoast(file);
+    change(record);
+    writeRoast(file, record);
   }
-}
-
-// The .alog for a roast: by number, or by file name (with or without
-// .alog) when the number isn't unique. Throws if there's none, or if the
-// number names more than one.
-export function findRoast(dir, roast) {
-  const alogs = fs.readdirSync(dir).filter((f) => f.endsWith('.alog'));
-  if (typeof roast === 'string' && !/^\d+$/.test(roast)) {
-    const name = roast.endsWith('.alog') ? roast : `${roast}.alog`;
-    if (!alogs.includes(name)) throw new Error(`no roast ${name} in ${dir}`);
-    return name;
-  }
-  const matches = alogs.filter((f) => f.startsWith(`#${roast}_`));
-  if (!matches.length) throw new Error(`no roast #${roast} in ${dir}`);
-  if (matches.length > 1)
-    throw new Error(
-      `roast #${roast} is ambiguous (${matches.join(', ')}): give the file name instead`,
-    );
-  return matches[0];
-}
-
-function writeJSON(file, data) {
-  fs.writeFileSync(`${file}.tmp`, JSON.stringify(data, null, 2) + '\n');
-  fs.renameSync(`${file}.tmp`, file);
 }

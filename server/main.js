@@ -156,7 +156,7 @@ function runAutopilot() {
   });
   const dir = here('../logs-sim/');
   recorder = new Recorder({session, dir, beans});
-  session.on('batchComplete', (b) => log(`wrote logs-sim/${b.file}.alog`));
+  session.on('batchComplete', (b) => log(`wrote logs-sim/${b.file}.json`));
   const at = (b) =>
     b?.charge ? ` (roast ${mmss(clock.now() - b.charge.t)})` : '';
   let lastPrint = 0;

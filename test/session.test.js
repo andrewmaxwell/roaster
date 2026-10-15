@@ -292,7 +292,7 @@ test('"not a charge" ends the alarm without starting a roast', async () => {
 });
 
 test('a weight in that is not a number is refused', async () => {
-  // (A NaN would make every write of the roast's .alog fail.)
+  // (A NaN would be saved as null: the weight lost.)
   const ctx = setup();
   const {session} = ctx;
   session.start();

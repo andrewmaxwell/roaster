@@ -9,7 +9,7 @@
 import fs from 'fs';
 import path from 'path';
 import {fileURLToPath} from 'url';
-import {readAlog, channels} from './alog.js';
+import {CHANNELS, indexAt, isRoastFile, readRoast} from './roastlog.js';
 import {step, charge, initialState, GREEN_TEMP} from './physics.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -18,11 +18,18 @@ const DT = 0.5;
 
 export function loadRoasts() {
   const roasts = [];
-  for (const f of fs.readdirSync(logsDir).filter((f) => f.endsWith('.alog'))) {
-    const d = readAlog(path.join(logsDir, f));
-    const [ci, , , , , , di] = d.timeindex;
-    if (ci < 1 || di <= ci) continue; // no charge, or never dropped
-    roasts.push({name: f, grams: d.weight[0], c: channels(d), ci, di});
+  for (const f of fs.readdirSync(logsDir).filter(isRoastFile).sort()) {
+    const r = readRoast(path.join(logsDir, f));
+    const {t} = r.samples;
+    const ci = indexAt(t, 0);
+    const di = indexAt(t, r.drop?.t);
+    if (!(ci >= 1) || !(di > ci)) continue; // no charge, or never dropped
+    // Missing readings as -1, the way the .alog files had them: the current
+    // simParams.json was fit that way. (The fit reads them as real values:
+    // fix that, and refit, separately.)
+    const c = {t};
+    for (const k of CHANNELS) c[k] = r.samples[k].map((x) => x ?? -1);
+    roasts.push({name: f, grams: r.weightIn, c, ci, di});
   }
   return roasts;
 }
