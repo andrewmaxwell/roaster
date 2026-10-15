@@ -1,0 +1,57 @@
+{
+  "bean": "espresso_monkey",
+  "batchGrams": 155,
+  "charge": {
+    "burner": 55,
+    "sv": 230
+  },
+  "steps": [
+    {
+      "bt": 150,
+      "burner": 45
+    },
+    {
+      "bt": 172,
+      "burner": 40,
+      "air": 35
+    },
+    {
+      "bt": 193,
+      "burner": 35
+    },
+    {
+      "bt": 195,
+      "burner": 30
+    },
+    {
+      "bt": 196,
+      "air": 40
+    },
+    {
+      "bt": 198,
+      "burner": 25
+    }
+  ],
+  "notes": "Mark FC when multiple pops occur close together; hold settings. Don't increase heat to chase a brief FC dip.",
+  "variants": {
+    "espresso": {
+      "drop": {
+        "bt": 203.8
+      },
+      "reference": {
+        "roast": 25,
+        "file": "#25_espresso_monkey_26-08-21_1449.alog",
+        "fc": "6:18",
+        "drop": "8:24"
+      }
+    }
+  },
+  "history": [
+    {
+      "date": "2026-10-15",
+      "afterRoast": 41,
+      "change": "Initial procedure, transcribed from roast #25: charge burner 55 / SV 230; burner 45 at 150, 40 + air 35 at 172, 35 at 193, 30 at 195, air 40 at 196, 25 at 198; espresso drop at 203.8. #25 is the reference (by file name: there are two #25s).",
+      "why": "Both earlier roasts of this blend (#24, #25, 2026-08-21) were REALLY GOOD (inventory note), so this copies one rather than adjusting anything. #25 over #24: #24 charged at burner 65 (every other procedure charges at 45-55) and has no DROP mark, while #25 has a full record. #25: TP 112 at 0:38, FC 6:18 at 187.2, drop 8:24 at 204.1, development 2:06 (25%), shorter than our single origins (31-38%). The drop is 203.8 because a trigger needs 3 readings at or above it and lands 0.2-0.5 past, so it should drop near #25's 204.1. #24 was similar but faster (FC 5:41 at 188.6, peak 204.9 at 7:27, ~24%). Bean: Sweet Maria's Espresso Monkey Blend (total score 88.0), built for body with fruited-chocolate roast notes. Sweet Maria's recommends FC+ to light Vienna, ideally stopping at the start of second crack, and resting at least 36 hours before pulling shots; never Full French or Italian, as the Brazils in it turn ashy. Our 204 drops are lighter than that advice, but they're what tasted REALLY GOOD, so the roast copies them. Espresso variant only. One batch left."
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "bean": "guatemala_finca_santa_ines_bourbon",
+  "batchGrams": 155,
+  "charge": {
+    "burner": 55,
+    "sv": 230
+  },
+  "steps": [
+    {
+      "bt": 150,
+      "burner": 45
+    },
+    {
+      "bt": 175,
+      "burner": 40,
+      "air": 40
+    },
+    {
+      "bt": 186,
+      "burner": 35
+    },
+    {
+      "bt": 190,
+      "burner": 30
+    },
+    {
+      "bt": 194,
+      "burner": 25
+    },
+    {
+      "bt": 198,
+      "burner": 15
+    }
+  ],
+  "notes": "Mark FC when multiple pops occur close together; hold settings. Don't increase heat to chase a brief FC dip.",
+  "variants": {
+    "espresso": {
+      "drop": {
+        "bt": 205.7
+      },
+      "reference": {
+        "roast": 39,
+        "fc": "6:23",
+        "drop": "9:10"
+      }
+    },
+    "pourover": {
+      "drop": {
+        "bt": 202.9
+      }
+    }
+  },
+  "history": [
+    {
+      "date": "2026-10-15",
+      "afterRoast": 41,
+      "change": "Initial procedure, copied from El Salvador Finca Miravalles Bourbon (current version): charge burner 55 / SV 230; burner 45 at 150, 40 + air 40 at 175, 35 at 186, 30 at 190, 25 at 194, 15 at 198; espresso drop 205.7, plus a pourover drop at 202.9. The reference is #39 (El Salvador, the same steps); there is no roast of this bean yet.",
+      "why": "Untried bean, so this starts from the most similar one with history. Sweet Maria's Guatemala Finca Santa Ines Bourbon: Antigua, the Minondo family's Santa Ines de Medina farm; washed Bourbon; total score 86.5; City to Full City+, good for espresso. Caramel sweetness, walnut and toasted almond, lemony acidity when light; punchy cocoa and chocolate taffy at Full City. The listing gives no altitude or screen size; Antigua farms are generally high-grown (about 1,500-1,700 m), so expect dense beans. El Salvador Miravalles is the closest match on every count: also a Sweet Maria's washed Bourbon from volcanic highlands, with nearly the same cupping notes (cocoa, walnut, roasted almond) and roast range, and its espresso roasts made a REALLY GOOD latte (#36). #39 ran these exact steps: FC 6:23 at 188.0, drop 9:10 at 206.4, 30% development. Pourover is new for this bean: 202.9 is 2.8 under the espresso drop, close to the Colombian Supremo's 3.1 gap between variants, aiming at City+ where the listing promises caramel and lemon. Both drops are first guesses; adjust after tasting."
+    }
+  ]
+}

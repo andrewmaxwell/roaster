@@ -238,6 +238,7 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
     res.json(list);
   });
   // A past roast's curve, relative to its charge, for the chart background.
+  // :number is a roast number, or a file name when the number is shared.
   // Reference roasts are the real ones in logs, even in the sim.
   app.get('/api/roast/:number', (req, res) => {
     const dir = path.join(ROOT, 'logs');
@@ -254,7 +255,7 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
     const end = dpi > 0 ? dpi : c.t.length - 1;
     const keep = (xs) => xs.slice(ci, end + 1);
     res.json({
-      number: Number(req.params.number),
+      number: Number(/^#(\d+)_/.exec(file)[1]),
       file,
       t: keep(c.t).map((t) => t - t0),
       BT: keep(c.BT),

@@ -1,0 +1,66 @@
+{
+  "bean": "colombia_productores_de_buesaco",
+  "batchGrams": 155,
+  "charge": {
+    "burner": 55,
+    "sv": 230
+  },
+  "steps": [
+    {
+      "bt": 154,
+      "burner": 45
+    },
+    {
+      "bt": 175,
+      "burner": 40,
+      "air": 40
+    },
+    {
+      "bt": 178,
+      "burner": 35
+    },
+    {
+      "bt": 190,
+      "burner": 30
+    },
+    {
+      "bt": 194,
+      "burner": 25
+    },
+    {
+      "bt": 198,
+      "burner": 15
+    }
+  ],
+  "notes": "Mark FC when multiple pops occur close together; hold settings. Don't increase heat to chase a brief FC dip.",
+  "variants": {
+    "espresso": {
+      "drop": {
+        "bt": 206
+      },
+      "reference": {
+        "roast": 30,
+        "fc": "7:15",
+        "drop": "10:29"
+      }
+    },
+    "pourover": {
+      "drop": {
+        "bt": 203.5
+      },
+      "reference": {
+        "roast": 40,
+        "fc": "7:00",
+        "drop": "9:35"
+      }
+    }
+  },
+  "history": [
+    {
+      "date": "2026-10-15",
+      "afterRoast": 41,
+      "change": "Initial procedure, copied from Colombian Supremo: charge burner 55 / SV 230; burner 45 at 154, 40 + air 40 at 175, 35 at 178, 30 at 190, 25 at 194, 15 at 198. Drops lowered from the Supremo's: espresso 206.0 (Supremo 207.4), pourover 203.5 (Supremo 204.3). References are Supremo #30 (espresso) and #40 (pourover); there is no roast of this bean yet.",
+      "why": "Untried bean, so this starts from the most similar one with history: Colombian Supremo, our most-roasted Colombian washed coffee. Sweet Maria's Colombia Productores de Buesaco: a small-producer blend from farms around Buesaco, Narino; washed Bourbon, Caturra, Typica types and modern hybrids; total score 87.8; City to Full City+. Toffee and creamy caramel, milk chocolate, baked apple and pear butter as it cools, juicy acidity. The steps stay the Supremo's; Narino coffee is typically grown very high (often 1,800 m and up), so it may be denser than the Supremo and reach FC a little later: watch whether FC lands later than the Supremo's ~7:00-7:15. The drops come down because this lot's appeal is its fruit and caramel, which a lighter roast keeps: espresso 1.4 under the Supremo's, toward Full City rather than Full City+, and pourover 0.8 under, toward City+. Both are first guesses; adjust after tasting."
+    }
+  ]
+}

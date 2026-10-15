@@ -18,7 +18,7 @@ const f = (v, d = 0) => (v == null ? '–' : Number(v).toFixed(d));
 let state = null;
 let samples = [];
 let procedures = [];
-const references = {}; // roast number → curve (or a pending promise)
+const references = {}; // roast number or file → curve (null while loading)
 let ws = null;
 let mic = null; // {stop, pops: [ms], level}
 let serverUp = false;
@@ -745,11 +745,12 @@ function scheduleChart() {
 }
 
 function reference(proc) {
-  const n = proc?.reference?.roast;
+  // By file name when the roast number isn't unique (#7, #25).
+  const n = proc?.reference?.file ?? proc?.reference?.roast;
   if (n == null) return null;
   if (!(n in references)) {
     references[n] = null;
-    fetch(`/api/roast/${n}`)
+    fetch(`/api/roast/${encodeURIComponent(n)}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((curve) => {
         references[n] = curve;

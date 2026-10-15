@@ -1,0 +1,56 @@
+{
+  "bean": "nicaragua_acopio_suyatal",
+  "batchGrams": 155,
+  "charge": {
+    "burner": 55,
+    "sv": 230
+  },
+  "steps": [
+    {
+      "bt": 150,
+      "burner": 45
+    },
+    {
+      "bt": 175,
+      "burner": 40,
+      "air": 40
+    },
+    {
+      "bt": 178,
+      "burner": 35
+    },
+    {
+      "bt": 190,
+      "burner": 30
+    },
+    {
+      "bt": 194,
+      "burner": 25
+    },
+    {
+      "bt": 198,
+      "burner": 15
+    }
+  ],
+  "notes": "Mark FC when multiple pops occur close together; hold settings. Don't increase heat to chase a brief FC dip.",
+  "variants": {
+    "espresso": {
+      "drop": {
+        "bt": 204.7
+      },
+      "reference": {
+        "roast": 33,
+        "fc": "6:30",
+        "drop": "9:33"
+      }
+    }
+  },
+  "history": [
+    {
+      "date": "2026-10-15",
+      "afterRoast": 41,
+      "change": "Initial procedure, transcribed from roast #33 (the only roast of this bean): charge burner 55 / SV 230; burner 45 at 150, 40 + air 40 at 175, 35 at 178, 30 at 190, 25 at 194, 15 at 198; espresso drop at 204.7. #33 is the reference.",
+      "why": "#33 (2026-09-25) ran the Colombian Supremo recipe with its first cut at 150 instead of 154: TP 110 at 0:36, FC 6:30 at 185.9, drop 9:33 at 205.0, development 3:03 (31.9%). RoR fell from 8.9 at 6:30 to 5.2 C/min at 7:30 and came back to 7.5 by 8:30, the Supremo's usual crash and flick, nothing to correct. The drop is 204.7 so the 3-reading trigger lands near #33's 205. #33 has no tasting notes or weight out: if you remember how it tasted, that's the first thing to add. Bean: Sweet Maria's, Finca Acopio Suyatal, Dipilto, Nueva Segovia (1,500 m); washed, patio-dried Caturra with some Maragogype, uniform in size (roasts evenly); total score 86.5. Brown sugar, vanilla wafer, walnut, pistachio, cocoa; City+ to Full City+, good for espresso (deep chocolate, hazelnut, good with milk). Espresso variant only, since that's how #33 was roasted and what the supplier suggests."
+    }
+  ]
+}

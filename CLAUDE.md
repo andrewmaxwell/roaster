@@ -151,7 +151,7 @@ Artisan validates loaded files with pydantic against `ProfileData` in `~/artisan
 
 ## Procedures
 
-A procedure's `variants` (e.g. `espresso`, `pourover`) shallowly override top-level fields; a variant's `steps` replaces the whole list. Compare drop and development only within a variant; charge through first crack is shared, so all variants pool for that part. In old filenames, `_pour_over` means `pourover`.
+A procedure's `variants` (e.g. `espresso`, `pourover`) shallowly override top-level fields; a variant's `steps` replaces the whole list. A `reference` names its roast by `roast` number, plus `file` when that number is shared (#7, #25); a test checks every reference resolves to exactly one log. Compare drop and development only within a variant; charge through first crack is shared, so all variants pool for that part. In old filenames, `_pour_over` means `pourover`.
 
 **Drafting one for a new bean** (usually from Sweet Maria's or Burman Coffee): find its listing and note the origin, process, altitude/density, screen size, and the supplier's roast advice. Add it to `beans.json`. Copy the procedure of the most similar bean with roast history (decaf → decaf, dense high-grown → dense high-grown), adjust it, explain each difference, and record the research and reasoning in the first `history` entry.
 

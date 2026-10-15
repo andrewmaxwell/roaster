@@ -33,9 +33,14 @@
     "name": "Guatemalan Los Volcanes",
     "aliases": ["guatemalan_los_volcanes"]
   },
-  "espresso_monkey": {"name": "Espresso Monkey", "aliases": ["espresso_monkey"]},
+  "espresso_monkey": {
+    "name": "Espresso Monkey",
+    "supplier": "Sweet Maria's",
+    "aliases": ["espresso_monkey"]
+  },
   "nicaragua_acopio_suyatal": {
     "name": "Nicaragua Acopio Suyatal",
+    "supplier": "Sweet Maria's",
     "aliases": ["nicaragua_acopio_suyatal"]
   },
   "el_salvador_finca_miravalles_bourbon": {

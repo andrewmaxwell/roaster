@@ -6,7 +6,9 @@ import {
   RoastTracker,
   preheatStable,
   rateOfRise,
+  PROCEDURES_DIR,
 } from '../server/procedure.js';
+import fs from 'fs';
 
 const proc = {
   bean: 'test',
@@ -47,6 +49,38 @@ test('bad procedures are rejected', () => {
 test('the real procedures load', () => {
   assert.equal(loadProcedure('colombian_supremo', 'espresso').drop.bt, 207.4);
   assert.equal(loadProcedure('colombian_supremo', 'pourover').drop.bt, 204.3);
+});
+
+test('every procedure and variant is valid, for a bean in beans.json', () => {
+  const beans = JSON.parse(
+    fs.readFileSync(new URL('../beans.json', import.meta.url), 'utf8'),
+  );
+  const logs = fs.readdirSync(new URL('../logs/', import.meta.url));
+  for (const f of fs.readdirSync(PROCEDURES_DIR)) {
+    if (!f.endsWith('.json')) continue;
+    const bean = f.slice(0, -'.json'.length);
+    assert.ok(beans[bean], `${bean} is in beans.json`);
+    const raw = JSON.parse(fs.readFileSync(`${PROCEDURES_DIR}/${f}`, 'utf8'));
+    assert.equal(raw.bean, bean, `${f} names its own bean`);
+    assert.ok(raw.history?.length, `${bean} has a history`);
+    for (const v of Object.keys(raw.variants ?? {null: 1})) {
+      const p = loadProcedure(bean, v === 'null' ? null : v);
+      // The reference curve has to be one roast in logs/ (the chart loads
+      // it by number, or by file when the number is shared).
+      const ref = p.reference;
+      if (!ref) continue;
+      const matches = ref.file
+        ? logs.filter((l) => l === ref.file)
+        : logs.filter(
+            (l) => l.startsWith(`#${ref.roast}_`) && l.endsWith('.alog'),
+          );
+      assert.equal(
+        matches.length,
+        1,
+        `${bean}/${v}: reference ${ref.file ?? ref.roast}`,
+      );
+    }
+  }
 });
 
 // Samples 1.5 s apart from a list of BTs.
