@@ -50,6 +50,16 @@ const portArg = args.indexOf('--port');
 const PORT = portArg >= 0 ? Number(args[portArg + 1]) : 3100;
 const speedArg = args.indexOf('--speed');
 const speed = SIM && speedArg >= 0 ? Number(args[speedArg + 1]) : 1;
+// Checked before anything connects: a bad number would otherwise surface
+// later as a confusing listen error or a clock running at NaN speed.
+if (!(Number.isInteger(PORT) && PORT > 0 && PORT < 65536)) {
+  console.log(`--port needs a port number, like --port 3100`);
+  process.exit(2);
+}
+if (!(speed > 0)) {
+  console.log(`--speed needs a number above 0, like --speed 10`);
+  process.exit(2);
+}
 
 const clock = createClock(speed);
 const sim = SIM ? new SimKaleido({clock, dropRate: 0.1}) : null;

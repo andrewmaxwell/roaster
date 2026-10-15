@@ -249,6 +249,48 @@ test('choosing the beans right after pouring them in still starts the roast', as
   await finish(ctx);
 });
 
+test('beans charged with none chosen keep the alarm going until they are', async () => {
+  const ctx = setup({dropRate: 0});
+  const {clock, sim, session, log} = ctx;
+  session.start();
+  await clock.until(() => session.phase === 'READY', HOUR, 5000);
+  const pouredAt = clock.now();
+  sim.chargeBeans(155);
+  await clock.advance(3 * 60_000);
+  assert.equal(session.phase, 'READY');
+  const since = log.filter((x) => x.t > pouredAt + 15_000);
+  const reminders = said(since).filter((t) => /none are chosen/.test(t));
+  assert.ok(reminders.length >= 5, `reminded ${reminders.length} times`);
+  assert.ok(
+    !said(since).some((t) => /^Ready/.test(t)),
+    "doesn't call for a charge with the beans already in",
+  );
+  session.selectBatch(ESPRESSO);
+  assert.equal(session.phase, 'ROASTING');
+  assert.ok(Math.abs(session.batch.charge.t - pouredAt) < 3000, 'backdated');
+  assert.ok(session.batch.tp, 'caught up on the roast so far');
+  await finish(ctx);
+});
+
+test('"not a charge" ends the alarm without starting a roast', async () => {
+  const ctx = setup({dropRate: 0});
+  const {clock, sim, session, log} = ctx;
+  session.start();
+  await clock.until(() => session.phase === 'READY', HOUR, 5000);
+  sim.chargeBeans(155);
+  await clock.until(() => session.pendingCharge, 30_000, 500);
+  session.dismissCharge();
+  const dismissedAt = clock.now();
+  await clock.advance(2 * 60_000);
+  const after = log.filter((x) => x.t > dismissedAt);
+  assert.ok(!said(after).some((t) => /none are chosen/.test(t)));
+  assert.equal(session.pendingCharge, null);
+  session.selectBatch(ESPRESSO);
+  await clock.advance(10_000);
+  assert.notEqual(session.phase, 'ROASTING', 'needs a new charge');
+  await finish(ctx);
+});
+
 test('a weight in that is not a number is refused', async () => {
   // (A NaN would make every write of the roast's .alog fail.)
   const ctx = setup();

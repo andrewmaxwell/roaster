@@ -27,6 +27,7 @@ export const SHUTDOWN = {air: 100, coolBelowC: 60};
 const KEEP_RECENT_MS = 10 * 60_000; // samples kept for stability/RoR checks
 const READY_REPEAT_MS = 60_000; // repeat "ready for charge" this often
 const DROP_REPEAT_MS = 5_000; // repeat "drop now" until the beans are out
+const UNCHOSEN_REPEAT_MS = 30_000; // beans charged with none chosen
 // BT falling this much within BEANS_OUT_MS (since the drop) = the drum is
 // empty. On the real logs that comes 12-24 s after the drop, the same or
 // earlier than "10 °C under the drop temp". It has to be fast: a drum left
@@ -75,6 +76,7 @@ export class Session extends EventEmitter {
     this.phase = 'NEW';
     this.next = null; // {bean, variant, weightIn, proc}: the batch to charge next
     this.batch = null; // the roast in progress (until a minute after its drop)
+    this.pendingCharge = null; // {t, BT}: a charge with no beans chosen
     this.tracker = null;
     this.planned = {}; // procedure's current burner/air during a roast
     this.overrides = {}; // user's burner/air, which beat the procedure's
@@ -164,9 +166,26 @@ export class Session extends EventEmitter {
     const proc = this.loadProcedure(bean, variant);
     this.next = {bean, variant: proc.variant, weightIn, proc};
     this.doneRequested = false;
+    // The beans are already in: start their roast from when they went in.
+    if (this.pendingCharge && this.phase !== 'ROASTING') {
+      const next = this.next;
+      this.startRoast(this.pendingCharge);
+      return next;
+    }
     if (this.phase === 'READY') this.promptCharge(true);
     this.emit('persist');
     return this.next;
+  }
+
+  // "That wasn't a charge": forget the unexplained fall (see checkCharge).
+  dismissCharge() {
+    if (!this.pendingCharge) return;
+    this.pendingCharge = null;
+    // The same fall would otherwise be detected again on the next reading:
+    // ignore it until BT stops falling (a 2 °C rise from its lowest).
+    this.chargeIgnore = {minBT: Infinity};
+    this.alarms.unchosenCharge = null;
+    this.emit('persist');
   }
 
   // The weight of the batch being roasted, or else of the next one.
@@ -390,6 +409,7 @@ export class Session extends EventEmitter {
   }
 
   promptCharge(force) {
+    if (this.pendingCharge) return; // the beans are in; see checkCharge
     const now = this.clock.now();
     if (!force && now - (this.alarms.ready ?? 0) < READY_REPEAT_MS) return;
     this.alarms.ready = now;
@@ -398,19 +418,39 @@ export class Session extends EventEmitter {
 
   // Beans going in show up as a sudden BT drop from the steady preheat
   // temperature (see chargePoint).
+  //
+  // Beans that went in before any were chosen: don't guess what they are,
+  // but keep saying so until they're chosen (which starts the roast from
+  // the charge) or the person says it wasn't a charge (dismissCharge).
+  // Giving up quietly would leave the beans roasting on the preheat PID
+  // while the app kept calling for a charge.
   checkCharge(s, fall) {
+    if (this.pendingCharge) return this.remindUnchosen(s.t);
+    if (this.chargeIgnore) {
+      const ig = this.chargeIgnore;
+      ig.minBT = Math.min(ig.minBT, s.BT);
+      if (s.BT < ig.minBT + 2) return;
+      this.chargeIgnore = null;
+    }
     const at = this.chargePoint(s, fall);
     if (!at) return;
     if (this.next) return this.startRoast(at);
-    // Beans went in before any were chosen. Don't guess what they are, but
-    // say so loudly: choosing now (while the fall is fresh) still starts it.
-    if (!this.alarms.unchosenCharge) {
-      this.alarms.unchosenCharge = true;
-      this.alert(
-        'urgent',
-        'That looked like a charge, but no beans are chosen. Choose them now to start the roast.',
-      );
-    }
+    this.pendingCharge = at;
+    this.alarms.unchosenCharge = s.t;
+    this.alert(
+      'urgent',
+      'That looked like a charge, but no beans are chosen. Choose them now to start the roast.',
+    );
+    this.emit('persist');
+  }
+
+  remindUnchosen(now) {
+    if (now - this.alarms.unchosenCharge < UNCHOSEN_REPEAT_MS) return;
+    this.alarms.unchosenCharge = now;
+    this.say(
+      'Beans are in, but none are chosen. Choose them to start the roast.',
+      {urgent: true},
+    );
   }
 
   // The reading just before a sudden BT fall of `fall` °C from the steady
@@ -436,6 +476,7 @@ export class Session extends EventEmitter {
   startRoast(charge) {
     const {bean, variant, weightIn, proc} = this.next;
     this.next = null;
+    this.pendingCharge = null;
     const number = this.nextRoastNumber();
     this.batch = {
       number,
@@ -612,6 +653,7 @@ export class Session extends EventEmitter {
 
   shutdown() {
     this.next = null;
+    this.pendingCharge = null;
     this.doneRequested = false;
     this.setPhase('SHUTDOWN');
     this.say('Shutting down. Cooling the machine.');
@@ -665,6 +707,7 @@ export class Session extends EventEmitter {
     return {
       phase: this.phase,
       next,
+      pendingCharge: this.pendingCharge,
       batch: this.batch && {...this.batch, samples: undefined}, // = log
       tracker: this.tracker?.toJSON() ?? null,
       planned: this.planned,
@@ -688,6 +731,7 @@ export class Session extends EventEmitter {
       alarms: saved.alarms ?? {},
       log: saved.log,
       batch: saved.batch,
+      pendingCharge: saved.pendingCharge ?? null,
     });
     if (this.batch) {
       this.batch.samples = this.log;

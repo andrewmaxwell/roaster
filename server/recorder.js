@@ -143,27 +143,27 @@ export class Recorder {
 
   // Weight out and tasting notes usually come after the record is closed,
   // so these patch the files (or the live batch, if it's still open).
-  setWeightOut(number, grams) {
+  // `roast` is a roast number, or the file name when the number is shared
+  // (old logs have two #7s and two #25s; see findRoast).
+  setWeightOut(roast, grams) {
     // (A NaN can't be written to the .alog.)
     if (!(Number(grams) > 0)) throw new Error('weight out must be grams');
-    this.update(number, (b) => (b.weightOut = Number(grams)));
+    this.update(roast, (b) => (b.weightOut = Number(grams)));
   }
 
-  addNote(number, text, date = new Date()) {
+  addNote(roast, text, date = new Date()) {
     const note = {date: date.toISOString().slice(0, 10), text};
-    this.update(number, (b) => (b.notes = [...(b.notes ?? []), note]));
+    this.update(roast, (b) => (b.notes = [...(b.notes ?? []), note]));
   }
 
-  update(number, change) {
+  update(roast, change) {
     const live = this.session.batch;
-    if (live?.number === number && live.file) {
+    if (live?.file && (live.number === roast || live.file === roast)) {
       change(live);
       return this.write(live);
     }
-    const file = fs
-      .readdirSync(this.dir)
-      .find((f) => f.startsWith(`#${number}_`) && f.endsWith('.alog'));
-    if (!file) throw new Error(`no roast #${number} in ${this.dir}`);
+    const file = findRoast(this.dir, roast);
+    const number = Number(/^#(\d+)_/.exec(file)[1]);
     const {alog, json} = this.paths(file.slice(0, -'.alog'.length));
     const d = readAlog(alog);
     // An older Artisan-only roast gets a sidecar now, holding just these, so
@@ -190,6 +190,25 @@ export class Recorder {
       d.cuppingnotes = side.notes.map((n) => n.text).join('\n');
     writeAlog(alog, d);
   }
+}
+
+// The .alog for a roast: by number, or by file name (with or without
+// .alog) when the number isn't unique. Throws if there's none, or if the
+// number names more than one.
+export function findRoast(dir, roast) {
+  const alogs = fs.readdirSync(dir).filter((f) => f.endsWith('.alog'));
+  if (typeof roast === 'string' && !/^\d+$/.test(roast)) {
+    const name = roast.endsWith('.alog') ? roast : `${roast}.alog`;
+    if (!alogs.includes(name)) throw new Error(`no roast ${name} in ${dir}`);
+    return name;
+  }
+  const matches = alogs.filter((f) => f.startsWith(`#${roast}_`));
+  if (!matches.length) throw new Error(`no roast #${roast} in ${dir}`);
+  if (matches.length > 1)
+    throw new Error(
+      `roast #${roast} is ambiguous (${matches.join(', ')}): give the file name instead`,
+    );
+  return matches[0];
 }
 
 function writeJSON(file, data) {

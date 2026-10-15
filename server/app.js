@@ -26,7 +26,7 @@ import {fileURLToPath} from 'url';
 import express from 'express';
 import {WebSocketServer} from 'ws';
 import {Session} from './session.js';
-import {Recorder} from './recorder.js';
+import {Recorder, findRoast} from './recorder.js';
 import {loadProcedure, rateOfRise, PROCEDURES_DIR} from './procedure.js';
 import {readAlog, channels} from './alog.js';
 
@@ -148,6 +148,7 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
     markSC: () => need().markSC(),
     dropNow: () => need().dropNow(),
     beansOut: () => need().beansOut(),
+    dismissCharge: () => need().dismissCharge(),
     setCooling: ({on}) => need().setCooling(on),
     override: ({control, value}) => need().override(control, Number(value)),
     release: ({control}) => need().release(control),
@@ -185,6 +186,7 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
       phase: s?.phase ?? 'IDLE',
       cooling: s?.cooling ?? false,
       doneRequested: s?.doneRequested ?? false,
+      pendingCharge: s?.pendingCharge ?? null,
       next: s?.next && {
         bean: s.next.bean,
         variant: s.next.variant,
@@ -239,12 +241,12 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
   // Reference roasts are the real ones in logs, even in the sim.
   app.get('/api/roast/:number', (req, res) => {
     const dir = path.join(ROOT, 'logs');
-    const file = fs
-      .readdirSync(dir)
-      .find(
-        (f) => f.startsWith(`#${req.params.number}_`) && f.endsWith('.alog'),
-      );
-    if (!file) return res.status(404).json({error: 'no such roast'});
+    let file;
+    try {
+      file = findRoast(dir, req.params.number);
+    } catch (err) {
+      return res.status(404).json({error: err.message});
+    }
     const d = readAlog(path.join(dir, file));
     const c = channels(d);
     const [ci, , fci, , , , dpi] = d.timeindex;
@@ -261,7 +263,12 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
       drop: dpi > 0 ? {t: c.t[dpi] - t0, BT: c.BT[dpi]} : null,
     });
   });
-  app.use(express.static(ROOT, {index: 'index.html'}));
+  // Only the page and its scripts: not the logs, the server's own code, or
+  // node_modules, which all live in the same folder.
+  const page = (file) => (req, res) => res.sendFile(path.join(ROOT, file));
+  app.get(['/', '/index.html'], page('index.html'));
+  app.get('/main.js', page('main.js'));
+  app.use('/ui', express.static(path.join(ROOT, 'ui')));
 
   const server = http.createServer(app);
   const wss = new WebSocketServer({

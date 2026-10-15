@@ -180,6 +180,29 @@ test('notes on an older Artisan roast add up instead of replacing each other', (
   fs.rmSync(dir, {recursive: true});
 });
 
+test('a roast number used twice has to be given by file name', () => {
+  // Old logs have two #7s and two #25s.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kaleido-'));
+  const logs = fileURLToPath(new URL('../logs/', import.meta.url));
+  const names = ['#7_ethiopiques_v2_26-06-14_1418', '#7_other_26-06-15_0900'];
+  for (const n of names)
+    fs.copyFileSync(
+      path.join(logs, '#7_ethiopiques_v2_26-06-14_1418.alog'),
+      path.join(dir, `${n}.alog`),
+    );
+  const recorder = new Recorder({session: new EventEmitter(), dir, beans});
+  assert.throws(() => recorder.setWeightOut(7, 130), /ambiguous.*file name/);
+  recorder.setWeightOut(names[1], 130);
+  assert.equal(readAlog(path.join(dir, `${names[0]}.alog`)).weight[1], 0);
+  assert.equal(readAlog(path.join(dir, `${names[1]}.alog`)).weight[1], 130);
+  const side = JSON.parse(
+    fs.readFileSync(path.join(dir, `${names[1]}.json`), 'utf8'),
+  );
+  assert.equal(side.roast, 7);
+  assert.throws(() => recorder.addNote('../x', 'no'), /no roast/);
+  fs.rmSync(dir, {recursive: true});
+});
+
 test("a log that can't be saved doesn't stop the roast", async () => {
   const ctx = setup();
   const {dir, clock, sim, session} = ctx;

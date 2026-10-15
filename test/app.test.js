@@ -86,7 +86,10 @@ test('a resume that fails leaves no half-started session behind', async () => {
   const state = saved('ROASTING'); // a roast with no batch can't resume
   state.next = null;
   const {app, machine, lines, stop} = start(state);
-  assert.ok(lines.some((l) => /couldn't resume/.test(l)), lines.join('\n'));
+  assert.ok(
+    lines.some((l) => /couldn't resume/.test(l)),
+    lines.join('\n'),
+  );
   assert.equal(app.getSession(), null, 'a new session can be started');
   assert.equal(machine.desired.HS, 0, 'nothing is heating');
   await stop();
@@ -96,6 +99,27 @@ test('with nothing to resume, the heater is set off', async () => {
   const {app, machine, stop} = start(null);
   assert.equal(app.getSession(), null);
   assert.equal(machine.desired.HS, 0);
+  await stop();
+});
+
+test('serves the page and its scripts, and nothing else in the folder', async () => {
+  const {app, stop} = start(null);
+  if (!app.server.listening)
+    await new Promise((r) => app.server.once('listening', r));
+  const base = `http://127.0.0.1:${app.server.address().port}`;
+  const status = async (p) => (await fetch(base + p)).status;
+  for (const p of ['/', '/index.html', '/main.js', '/ui/charts.js'])
+    assert.equal(await status(p), 200, p);
+  assert.equal(await status('/ui/vendor/uPlot.min.css'), 200);
+  for (const p of [
+    '/server/app.js',
+    '/package.json',
+    '/CLAUDE.md',
+    '/procedures/colombian_supremo.json',
+    '/node_modules/ws/package.json',
+    '/ui/../server/app.js',
+  ])
+    assert.equal(await status(p), 404, p);
   await stop();
 });
 

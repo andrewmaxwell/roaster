@@ -2,7 +2,7 @@
 
 Controller for a Kaleido M1 LITE roaster. Read `README.md` first for what it does. This file covers how it's built, the hard-won facts about the machine, and the Claude Code workflows.
 
-It needs a local Node server (`serialport`, `ws`, `express` from `package.json`; `npm install` once), because the server owns the serial port. `npm test` runs the tests. The browser UI is a plain ES module page served by that server. Its one library, uPlot 1.6.32, is copied into `ui/vendor/` so the UI, STOP included, works with no internet. Keep it that way: no CDN imports here.
+It needs a local Node server (`serialport`, `ws`, `express` from `package.json`; `npm install` once), because the server owns the serial port. `npm test` runs the tests, `npm run lint` checks ESLint and Prettier (`npm run format` fixes formatting), and GitHub Actions runs both on every push. The browser UI is a plain ES module page served by that server. Its one library, uPlot 1.6.32, is copied into `ui/vendor/` so the UI, STOP included, works with no internet. Keep it that way: no CDN imports here.
 
 **Never edit `server/*.js` while the app is running on the roaster** (check `ps`). **Test every behavior in the simulator first**, and replay changes against the real logs in `logs/`, checking how much earlier or later things happen than in the real roasts, not just whether they happen.
 
@@ -31,7 +31,7 @@ server/
   stop.js        emergency stop for when the app is gone: emergencyStop()
   guardian.js    separate process: heater off if the app dies or hangs
   selftest.js    empty-drum hardware checks (main.js --selftest)
-test/            node --test test/*.test.js
+test/            npm test (node --test, against the simulator)
 index.html, main.js   browser UI: readouts, charts, side panel of actions, alarm banner
 ui/charts.js          three stacked uPlot charts (temps, RoR, burner/air) sharing time + cursor
 ui/vendor/            uPlot's ESM build and CSS
@@ -63,7 +63,7 @@ The old `roast/` project was never trusted on real beans. These rules are the fi
 PREHEAT → READY → ROASTING → PREHEAT (next batch) → … → SHUTDOWN → OFF. The roaster's settings for each phase come only from `desiredState()`.
 
 - **Ready** means every setting is confirmed, BT has stayed within 1.5 °C of SV for 3 minutes, and ET isn't *rising* faster than 0.5 °C/min over those 3 minutes *or* the last 1.5. (ET overshoots, dips, then climbs once BT reaches SV, and one fit across that reads as flat; that called a cold drum ready after 7 minutes on 2026-10-04.) Falling ET is fine: between batches the user charged with ET still falling 0.5–1.5 °C/min. Replayed on the real cold starts, ready comes at 12–16 minutes with ET 177–183 °C, before every real charge. A disconnect drops READY back to PREHEAT with fresh readings (a power cut can cool the drum unseen).
-- **Charge is only auto-detected** (no button: the user's choice) and needs beans chosen first. Without them, a charge-like fall raises an urgent alert, and choosing the beans within about 25 s still starts the roast. Detection: 2 readings at least 5 °C below the BT average of 10–30 s earlier; in PREHEAT, 20 °C, and not while the last batch's record is open (its beans coming out look like a charge). Real charges fall about 70 °C, and 25 °C within 6–10 s; real preheats swing up to 8.5 °C. Replayed on all 40 real logs, it never fires early and catches every charge within 9 s. 3 of the 12 roasts before #38 were charged before "ready", so PREHEAT charges start a roast too. The roast clock is backdated to the last reading before the fall.
+- **Charge is only auto-detected** (no button: the user's choice) and needs beans chosen first. Without them, a charge-like fall becomes a pending charge (`pendingCharge`): an urgent alert, then a spoken reminder every 30 s, and no "ready for charge" prompts, until the beans are chosen (the roast then starts from the charge, catching up on any steps BT has passed) or the person clicks "Not a charge" (`dismissCharge()`, which ignores that fall until BT turns back up). Detection: 2 readings at least 5 °C below the BT average of 10–30 s earlier; in PREHEAT, 20 °C, and not while the last batch's record is open (its beans coming out look like a charge). Real charges fall about 70 °C, and 25 °C within 6–10 s; real preheats swing up to 8.5 °C. Replayed on all 40 real logs, it never fires early and catches every charge within 9 s. 3 of the 12 roasts before #38 were charged before "ready", so PREHEAT charges start a roast too. The roast clock is backdated to the last reading before the fall.
 - **Turning point** is the first reading 2 °C above the lowest BT so far. Steps arm only after it; the drop never waits for it.
 - **Triggers** (steps and drop) need 3 consecutive readings at or above their temperature, so one thermocouple spike can't fire them. At ~5 °C/min that lands 0.2–0.5 °C past the target.
 - **The cooling fan** comes on once BT is within 1 °C of the drop (`COOL_BEFORE_DROP_C`): a median 7.5 s before the drop on the real logs (3–18 s). It stays on until the user turns it off.
@@ -96,7 +96,7 @@ After a discharge the drum restarts at the empty-drum steady state, and for 30 s
 
 ## UI
 
-- **Served by the app server** (it needs the WebSocket), not as static files.
+- **Served by the app server** (it needs the WebSocket). It serves only `index.html`, `main.js` and `ui/`: the logs, server code and `node_modules` share the folder.
 - **Charts:** three plots, not a dual-axis chart. Colors follow the dataviz palette's order: BT 1 (blue), ET 2 (orange), burner 3 (aqua), air 4 (yellow), with dark-mode steps. The procedure's `reference.roast` BT (from `/api/roast/:n`, always from `logs/`, even in the sim) is a muted dashed line. While roasting, x is seconds since charge; otherwise the last 20 minutes. Only the *next* step and the drop get horizontal guides; more collide.
 - **Side panel:** rebuilt only when its inputs change (`renderSide`'s key). A rebuild mid-typing keeps form values and focus by element id, so per-batch inputs get per-batch ids (`weightOut-<n>`). Numbers that change every reading update in place by id (`preheatInfo`, `devInfo`, `dropEta`).
 - **Two clicks for anything irreversible:** STOP, second crack, drop now, done for today, and everything off need a second click within 3 s (`confirmed()`).
@@ -157,7 +157,7 @@ A procedure's `variants` (e.g. `espresso`, `pourover`) shallowly override top-le
 
 ## Analyzing a roast
 
-Resolve bean names through `beans.json` (old filenames spell them inconsistently). Roast numbers aren't unique in old logs (#7 and #25 appear twice); go by filename when ambiguous.
+Resolve bean names through `beans.json` (old filenames spell them inconsistently). Roast numbers aren't unique in old logs (#7 and #25 appear twice); go by filename when ambiguous. `recorder.js` refuses an ambiguous number and takes the file name instead (`findRoast()`).
 
 1. Get the facts:
    - **App roasts (#38 on):** read the sidecar (about 5 KB).
@@ -179,7 +179,7 @@ The user mentions drinks in passing ("a latte with 11 g of the Colombian Supremo
 
 - **Find the roast** by bean (through `beans.json`) and roast date. If several roasts of that bean share the date, put the note on each, say in it that which one is unknown, and ask; once known, remove it from the others.
 - **Write a dated entry:** the drink, grams of each bean, blend partners with their roast numbers, days since roasting, and the user's own words about taste and grind. A blend's note goes on every roast in it.
-- **Use `Recorder.addNote(number, text, date)`** (and `setWeightOut()` for weights) from `server/recorder.js` in a one-off script, with a stub session (`new EventEmitter()`) and `dir` set to `logs/`. It updates the sidecar and mirrors into the `.alog`'s `cuppingnotes` and `weight`. An older Artisan roast gets a small sidecar on its first note (any notes typed into Artisan become its first). Don't edit the files by hand.
+- **Use `Recorder.addNote(roast, text, date)`** (`roast`: the number, or the file name for #7 and #25) (and `setWeightOut()` for weights) from `server/recorder.js` in a one-off script, with a stub session (`new EventEmitter()`) and `dir` set to `logs/`. It updates the sidecar and mirrors into the `.alog`'s `cuppingnotes` and `weight`. An older Artisan roast gets a small sidecar on its first note (any notes typed into Artisan become its first). Don't edit the files by hand.
 - **Check that nothing else changed** (parse the old and new `.alog` and compare), then commit the logs.
 
 ## Green bean inventory

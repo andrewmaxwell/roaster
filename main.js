@@ -142,6 +142,7 @@ function phaseName() {
   if (!state) return '';
   const b = state.batch;
   if (b?.drop && !b.beansOut) return 'Drop now';
+  if (state.pendingCharge) return 'Choose the beans';
   return PHASES[state.phase] ?? state.phase;
 }
 
@@ -208,6 +209,7 @@ function renderSide() {
     s.overrides,
     s.cooling,
     s.doneRequested,
+    s.pendingCharge,
     s.lastBatch,
     s.alerts,
     procedures.length,
@@ -267,7 +269,13 @@ const section = (title, body, cls = '') =>
 const confirmClass = (key) => (confirming.has(key) ? 'confirm' : '');
 
 function statusSection() {
-  const {phase, next} = state;
+  const {phase, next, pendingCharge} = state;
+  if (pendingCharge && (phase === 'PREHEAT' || phase === 'READY'))
+    return section(
+      '',
+      `<div class="alert urgent"><span class="icon">⚠</span><span>BT dropped like a charge at ${new Date(pendingCharge.t).toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'})}, but no beans are chosen. Choose them below: the roast starts from that moment.</span></div>
+       <button data-act="dismissCharge" class="${confirmClass('dismissCharge')}">${confirming.has('dismissCharge') ? 'Click again: it was not a charge' : 'Not a charge'}</button>`,
+    );
   if (phase === 'IDLE' || phase === 'OFF')
     return section(
       '',
@@ -578,6 +586,8 @@ const HANDLERS = {
   },
   offNow: () => confirmed('off', rerenderSide) && act('offNow'),
   done: () => confirmed('done', rerenderSide) && act('done'),
+  dismissCharge: () =>
+    confirmed('dismissCharge', rerenderSide) && act('dismissCharge'),
   micOn: async () => {
     const pops = [];
     try {
