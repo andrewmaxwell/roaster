@@ -24,14 +24,32 @@ export function loadRoasts() {
     const ci = indexAt(t, 0);
     const di = indexAt(t, r.drop?.t);
     if (!(ci >= 1) || !(di > ci)) continue; // no charge, or never dropped
-    // Missing readings as -1, the way the .alog files had them: the current
-    // simParams.json was fit that way. (The fit reads them as real values:
-    // fix that, and refit, separately.)
-    const c = {t};
-    for (const k of CHANNELS) c[k] = r.samples[k].map((x) => x ?? -1);
-    roasts.push({name: f, grams: r.weightIn, c, ci, di});
+    // A missing reading holds the last good one (the first good one, before
+    // any), so the replays' inputs don't jump; `ok` marks the real readings,
+    // the only ones the error counts. The preheat replay starts at the first.
+    const ok = t.map(
+      (_, i) => r.samples.BT[i] != null && r.samples.ET[i] != null,
+    );
+    const c = {t, ok};
+    for (const k of CHANNELS) c[k] = hold(r.samples[k]);
+    const start = ok.indexOf(true);
+    if (!(start >= 0 && start < ci)) continue;
+    roasts.push({name: f, grams: r.weightIn, c, ci, di, start});
   }
   return roasts;
+}
+
+function hold(xs) {
+  let last = xs.find((x) => x != null) ?? null;
+  return xs.map((x) => (last = x ?? last));
+}
+
+// Steps the physics across one sample interval, in whole steps of about DT
+// that add up to exactly its length (Artisan's intervals jitter around 1.5 s,
+// and a `t += DT` loop gave 1.5000004 s four steps: 2 s of physics).
+function advance(s, u, params, dt) {
+  const n = Math.max(1, Math.round(dt / DT));
+  for (let i = 0; i < n; i++) step(s, u, params, dt / n);
 }
 
 // The logged HP is the PID duty in auto mode and the command in manual, where
@@ -57,24 +75,31 @@ export function replay(r, params, from, to, withBeans) {
   const out = [];
   for (let k = from; k < to; k++) {
     out.push({ET: s.ET, BT: s.BT});
-    const u = inputs(c, k);
-    for (let t = c.t[k]; t < c.t[k + 1] - 1e-9; t += DT) step(s, u, params, DT);
+    advance(s, inputs(c, k), params, c.t[k + 1] - c.t[k]);
   }
   return out;
 }
 
 function rmse(r, sim, from) {
+  const {c} = r;
   let e = 0;
+  let n = 0;
   sim.forEach((x, k) => {
-    e += (x.BT - r.c.BT[from + k]) ** 2 + 0.3 * (x.ET - r.c.ET[from + k]) ** 2;
+    if (!c.ok[from + k]) return;
+    e += (x.BT - c.BT[from + k]) ** 2 + 0.3 * (x.ET - c.ET[from + k]) ** 2;
+    n++;
   });
-  return Math.sqrt(e / sim.length);
+  return Math.sqrt(e / n);
 }
 
 const mean = (xs) => xs.reduce((a, b) => a + b, 0) / xs.length;
 
 export const preheatError = (roasts, params) =>
-  mean(roasts.map((r) => rmse(r, replay(r, params, 0, r.ci, false), 0)));
+  mean(
+    roasts.map((r) =>
+      rmse(r, replay(r, params, r.start, r.ci, false), r.start),
+    ),
+  );
 
 // The burner/air changes made during a roast, each with the BT it was made
 // at. Changes before the turning point are kept on their timing instead.
@@ -116,7 +141,7 @@ export function replayClosed(r, params) {
       Object.assign(u, {duty: e.HP, FC: e.FC});
       events.shift();
     }
-    for (let t = c.t[k]; t < c.t[k + 1] - 1e-9; t += DT) step(s, u, params, DT);
+    advance(s, u, params, c.t[k + 1] - c.t[k]);
   }
   return out;
 }
