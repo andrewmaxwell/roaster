@@ -1,0 +1,10 @@
+{
+  "sv": 185,
+  "air": 30,
+  "drum": 90,
+  "stable": {
+    "forSeconds": 180,
+    "btWithinC": 1.5,
+    "maxEtRiseCPerMin": 0.5
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "bean": "el_salvador_finca_miravalles_bourbon",
+  "batchGrams": 155,
+  "charge": {
+    "burner": 55,
+    "sv": 230
+  },
+  "steps": [
+    {
+      "bt": 150,
+      "burner": 45
+    },
+    {
+      "bt": 175,
+      "burner": 40,
+      "air": 40
+    },
+    {
+      "bt": 186,
+      "burner": 35
+    },
+    {
+      "bt": 190,
+      "burner": 30
+    },
+    {
+      "bt": 194,
+      "burner": 25
+    },
+    {
+      "bt": 198,
+      "burner": 15
+    }
+  ],
+  "notes": "Mark FC when multiple pops occur close together; hold settings. Don't increase heat to chase a brief FC dip.",
+  "variants": {
+    "espresso": {
+      "drop": {
+        "bt": 205.7
+      },
+      "reference": {
+        "roast": 36,
+        "fc": "6:26",
+        "drop": "10:19"
+      }
+    }
+  },
+  "history": [
+    {
+      "date": "2026-10-11",
+      "afterRoast": 38,
+      "change": "Initial procedure, transcribed from roast #36 (the only roast of this bean): charge burner 55 / SV 230; burner 45 at 150, 40 + air 40 at 175, 35 at 178, 30 at 190, 25 at 194, 15 at 198; espresso drop at 205.7. #36 is the reference.",
+      "why": "#36 made a REALLY GOOD half-caf latte (12 g + 6 g decaf Honduran #34, rested 8 days), so the first procedure copies it rather than adjusting anything. Its controls are the Colombian Supremo recipe except the first burner cut, which #36 made at 150 rather than 154. The drop is 205.7 because a trigger needs 3 readings at or above it and lands 0.2-0.5 past, so it should drop near #36's 206. Bean: Sweet Maria's, Apaneca, Ahuachapan (Santa Ana volcano), Duarte family farm; washed Bourbon; cupping notes cocoa, burnt sugar, walnut, roasted almond; recommended City+ to Full City+, good for espresso. #36 developed 3:53 after FC (37.6%), longer than recent Supremo roasts (~31%); keep that until a tasting says otherwise. Espresso variant only: there is no pour-over roast of this bean to copy."
+    },
+    {
+      "date": "2026-10-11",
+      "afterRoast": 38,
+      "change": "Moved the burner 35 cut from 178 to 186 (FC); everything else unchanged, including the 205.7 drop.",
+      "why": "In #36 the cuts at 175 (burner 45->40, air 30->40) and 178 (40->35) landed 23 s apart, a minute before FC at 186 (6:26). About a minute later RoR crashed from ~9 to 1.7 C/min, with BT flat at 190 around 7:15-7:30 (the 190 cut landed right in that trough), then flicked back to 6-8 C/min from 8:45 to 9:45 while the burner was still coming down. That is a 7 C/min fall and a 6 C/min rebound, about twice the Colombian Supremo's usual (#37, #38: 3-4 down, 1.5-2 back up). The stall is also why development ran 3:53 (37.6%). Holding 40% until FC should carry more momentum through first crack: a smaller crash and flick, FC a little earlier, and development probably closer to 3:15-3:30 at the same drop temperature, so roast degree stays where the REALLY GOOD latte was. One change only, so the next roast shows its effect."
+    }
+  ]
+}

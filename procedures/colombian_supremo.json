@@ -1,0 +1,66 @@
+{
+  "bean": "colombian_supremo",
+  "batchGrams": 155,
+  "charge": {
+    "burner": 55,
+    "sv": 230
+  },
+  "steps": [
+    {
+      "bt": 154,
+      "burner": 45
+    },
+    {
+      "bt": 175,
+      "burner": 40,
+      "air": 40
+    },
+    {
+      "bt": 178,
+      "burner": 35
+    },
+    {
+      "bt": 190,
+      "burner": 30
+    },
+    {
+      "bt": 194,
+      "burner": 25
+    },
+    {
+      "bt": 198,
+      "burner": 15
+    }
+  ],
+  "notes": "Mark FC when multiple pops occur close together; hold settings. Don't increase heat to chase a brief FC dip.",
+  "variants": {
+    "espresso": {
+      "drop": {
+        "bt": 207.4
+      },
+      "reference": {
+        "roast": 30,
+        "fc": "7:15",
+        "drop": "10:29"
+      }
+    },
+    "pourover": {
+      "drop": {
+        "bt": 204.3
+      }
+    }
+  },
+  "history": [
+    {
+      "date": "2026-10-04",
+      "afterRoast": 37,
+      "change": "Initial procedure, transcribed from the manual Artisan recipe."
+    },
+    {
+      "date": "2026-10-04",
+      "afterRoast": 37,
+      "change": "Split into variants: espresso drops at 207.4 (the existing procedure); pourover drops at 204.3.",
+      "why": "Pourover drop copied from roast #23 (the only pour-over roast of this bean). Unverified; revisit after the first pourover batch."
+    }
+  ]
+}

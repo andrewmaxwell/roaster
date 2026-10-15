@@ -1,0 +1,142 @@
+{
+  "roast": 40,
+  "bean": "colombian_supremo",
+  "beanName": "Colombian Supremo",
+  "variant": "pourover",
+  "alog": "#40_colombian_supremo_pourover_26-10-13_1158.alog",
+  "startedAt": "2026-10-13T16:58:28.887Z",
+  "chargedAt": "2026-10-13T17:19:48.211Z",
+  "weightIn": 155,
+  "weightOut": 128.2,
+  "procedure": {
+    "version": 2,
+    "charge": {
+      "burner": 55,
+      "sv": 230
+    },
+    "steps": [
+      {
+        "bt": 154,
+        "burner": 45
+      },
+      {
+        "bt": 175,
+        "burner": 40,
+        "air": 40
+      },
+      {
+        "bt": 178,
+        "burner": 35
+      },
+      {
+        "bt": 190,
+        "burner": 30
+      },
+      {
+        "bt": 194,
+        "burner": 25
+      },
+      {
+        "bt": 198,
+        "burner": 15
+      }
+    ],
+    "drop": {
+      "bt": 204.3
+    }
+  },
+  "charge": {
+    "BT": 184.6
+  },
+  "tp": {
+    "t": 36,
+    "BT": 109.4
+  },
+  "fc": {
+    "t": 419.6,
+    "BT": 188.4
+  },
+  "sc": null,
+  "drop": {
+    "t": 575,
+    "BT": 204.5,
+    "reason": "temperature"
+  },
+  "beansOut": {
+    "t": 590,
+    "BT": 194.5
+  },
+  "steps": [
+    {
+      "index": 0,
+      "t": 220.7,
+      "BT": 154.8,
+      "bt": 154,
+      "burner": 45,
+      "overridden": []
+    },
+    {
+      "index": 1,
+      "t": 334.8,
+      "BT": 175.7,
+      "bt": 175,
+      "burner": 40,
+      "air": 40,
+      "overridden": []
+    },
+    {
+      "index": 2,
+      "t": 352.8,
+      "BT": 178.7,
+      "bt": 178,
+      "burner": 35,
+      "overridden": []
+    },
+    {
+      "index": 3,
+      "t": 435.4,
+      "BT": 190,
+      "bt": 190,
+      "burner": 30,
+      "overridden": []
+    },
+    {
+      "index": 4,
+      "t": 475.9,
+      "BT": 194.4,
+      "bt": 194,
+      "burner": 25,
+      "overridden": []
+    },
+    {
+      "index": 5,
+      "t": 518,
+      "BT": 198.7,
+      "bt": 198,
+      "burner": 15,
+      "overridden": []
+    }
+  ],
+  "overrides": [],
+  "alerts": [
+    {
+      "t": 630.2,
+      "BT": 184.7,
+      "level": "urgent",
+      "text": "Stopped: heater off. Air and drum keep running to cool."
+    },
+    {
+      "t": 630.3,
+      "BT": 184.7,
+      "level": "warn",
+      "text": "Burner isn't responding: wants 0, reads 35."
+    }
+  ],
+  "pops": [],
+  "notes": [
+    {
+      "date": "2026-10-13",
+      "text": "Weight out not measured (forgot to weigh); 128.2 g assumed, copied from #38 (espresso, a darker drop), so the real weight was probably a little higher."
+    }
+  ]
+}

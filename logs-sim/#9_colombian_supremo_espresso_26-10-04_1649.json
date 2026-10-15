@@ -1,0 +1,124 @@
+{
+  "roast": 9,
+  "bean": "colombian_supremo",
+  "beanName": "Colombian Supremo",
+  "variant": "espresso",
+  "alog": "#9_colombian_supremo_espresso_26-10-04_1649.alog",
+  "startedAt": "2026-10-04T21:49:36.772Z",
+  "chargedAt": "2026-10-04T22:09:20.782Z",
+  "weightIn": 155,
+  "weightOut": null,
+  "procedure": {
+    "version": 2,
+    "charge": {
+      "burner": 55,
+      "sv": 230
+    },
+    "steps": [
+      {
+        "bt": 154,
+        "burner": 45
+      },
+      {
+        "bt": 175,
+        "burner": 40,
+        "air": 40
+      },
+      {
+        "bt": 178,
+        "burner": 35
+      },
+      {
+        "bt": 190,
+        "burner": 30
+      },
+      {
+        "bt": 194,
+        "burner": 25
+      },
+      {
+        "bt": 198,
+        "burner": 15
+      }
+    ],
+    "drop": {
+      "bt": 207.4
+    }
+  },
+  "charge": {
+    "BT": 185
+  },
+  "tp": {
+    "t": 51.9,
+    "BT": 109
+  },
+  "fc": {
+    "t": 586.7,
+    "BT": 195.8
+  },
+  "sc": null,
+  "drop": {
+    "t": 704.9,
+    "BT": 207.6,
+    "reason": "temperature"
+  },
+  "beansOut": {
+    "t": 1208.7,
+    "BT": 197.6
+  },
+  "steps": [
+    {
+      "index": 0,
+      "t": 236,
+      "BT": 154.9,
+      "bt": 154,
+      "burner": 45,
+      "overridden": []
+    },
+    {
+      "index": 1,
+      "t": 364.5,
+      "BT": 175.5,
+      "bt": 175,
+      "burner": 40,
+      "air": 40,
+      "overridden": []
+    },
+    {
+      "index": 2,
+      "t": 389,
+      "BT": 178.3,
+      "bt": 178,
+      "burner": 35,
+      "overridden": []
+    },
+    {
+      "index": 3,
+      "t": 531.5,
+      "BT": 190.3,
+      "bt": 190,
+      "burner": 30,
+      "overridden": []
+    },
+    {
+      "index": 4,
+      "t": 574.4,
+      "BT": 194.4,
+      "bt": 194,
+      "burner": 25,
+      "overridden": []
+    },
+    {
+      "index": 5,
+      "t": 608,
+      "BT": 198.4,
+      "bt": 198,
+      "burner": 15,
+      "overridden": []
+    }
+  ],
+  "overrides": [],
+  "alerts": [],
+  "pops": [],
+  "notes": []
+}

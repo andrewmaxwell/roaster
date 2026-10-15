@@ -1,0 +1,125 @@
+{
+  "roast": 4,
+  "bean": "colombian_supremo",
+  "beanName": "Colombian Supremo",
+  "variant": "pourover",
+  "alog": "#4_colombian_supremo_pourover_26-10-04_0923.alog",
+  "startedAt": "2026-10-04T14:23:07.703Z",
+  "chargedAt": "2026-10-04T14:31:58.253Z",
+  "weightIn": 155,
+  "weightOut": null,
+  "procedure": {
+    "version": 2,
+    "charge": {
+      "burner": 55,
+      "sv": 230
+    },
+    "steps": [
+      {
+        "bt": 154,
+        "burner": 45
+      },
+      {
+        "bt": 175,
+        "burner": 40,
+        "air": 40
+      },
+      {
+        "bt": 178,
+        "burner": 35
+      },
+      {
+        "bt": 190,
+        "burner": 30
+      },
+      {
+        "bt": 194,
+        "burner": 25
+      },
+      {
+        "bt": 198,
+        "burner": 15
+      }
+    ],
+    "drop": {
+      "bt": 204.3
+    }
+  },
+  "charge": {
+    "how": "detected",
+    "BT": 185
+  },
+  "tp": {
+    "t": 52.7,
+    "BT": 108.6
+  },
+  "fc": {
+    "t": 522.9,
+    "BT": 189
+  },
+  "sc": null,
+  "drop": {
+    "t": 673.5,
+    "BT": 204.6,
+    "reason": "temperature"
+  },
+  "beansOut": {
+    "t": 721.6,
+    "BT": 194.4
+  },
+  "steps": [
+    {
+      "index": 0,
+      "t": 239.1,
+      "BT": 155,
+      "bt": 154,
+      "burner": 45,
+      "overridden": []
+    },
+    {
+      "index": 1,
+      "t": 369.4,
+      "BT": 175.5,
+      "bt": 175,
+      "burner": 40,
+      "air": 40,
+      "overridden": []
+    },
+    {
+      "index": 2,
+      "t": 394.2,
+      "BT": 178.4,
+      "bt": 178,
+      "burner": 35,
+      "overridden": []
+    },
+    {
+      "index": 3,
+      "t": 538.4,
+      "BT": 190.3,
+      "bt": 190,
+      "burner": 30,
+      "overridden": []
+    },
+    {
+      "index": 4,
+      "t": 580.3,
+      "BT": 194.3,
+      "bt": 194,
+      "burner": 25,
+      "overridden": []
+    },
+    {
+      "index": 5,
+      "t": 614.5,
+      "BT": 198.4,
+      "bt": 198,
+      "burner": 15,
+      "overridden": []
+    }
+  ],
+  "overrides": [],
+  "alerts": [],
+  "pops": [],
+  "notes": []
+}

@@ -1,0 +1,56 @@
+{
+  "new_classic_espresso": {
+    "name": "New Classic Espresso",
+    "aliases": ["new_classic_espresso"]
+  },
+  "colombia_huila_ea_decaf": {
+    "name": "Colombia Huila EA Decaf",
+    "aliases": [
+      "columbia_huila_ea_decaf",
+      "colombia_huila_ea_decaf",
+      "colombia_hulia_ea_decaf",
+      "decaf_colombian_huila_ea",
+      "decaf_colombia_huila"
+    ]
+  },
+  "ethiopiques_v2": {"name": "Ethiopiques V2", "aliases": ["ethiopiques_v2"]},
+  "10_speed": {"name": "10 Speed", "aliases": ["10_speed", "10_Speed"]},
+  "honduran_mwp_decaf": {
+    "name": "Honduran MWP Decaf",
+    "supplier": "Burman Coffee",
+    "aliases": ["decaf_honduran", "decaf_honduran_mwp"]
+  },
+  "brazil_cerrado": {"name": "Brazil Cerrado", "aliases": ["brazil_cerrado"]},
+  "colombian_supremo": {
+    "name": "Colombian Supremo",
+    "aliases": [
+      "colombian_supremo",
+      "colombian_supremo_pour_over",
+      "colombia_supremo"
+    ]
+  },
+  "guatemalan_los_volcanes": {
+    "name": "Guatemalan Los Volcanes",
+    "aliases": ["guatemalan_los_volcanes"]
+  },
+  "espresso_monkey": {"name": "Espresso Monkey", "aliases": ["espresso_monkey"]},
+  "nicaragua_acopio_suyatal": {
+    "name": "Nicaragua Acopio Suyatal",
+    "aliases": ["nicaragua_acopio_suyatal"]
+  },
+  "el_salvador_finca_miravalles_bourbon": {
+    "name": "El Salvador Finca Miravalles Bourbon",
+    "supplier": "Sweet Maria's",
+    "aliases": ["el_salvador_finca_miravalles_bourbon"]
+  },
+  "guatemala_finca_santa_ines_bourbon": {
+    "name": "Guatemala Finca Santa Ines Bourbon",
+    "supplier": "Sweet Maria's",
+    "aliases": ["guatemala_finca_santa_ines_bourbon"]
+  },
+  "colombia_productores_de_buesaco": {
+    "name": "Colombia Productores de Buesaco",
+    "supplier": "Sweet Maria's",
+    "aliases": ["colombia_productores_de_buesaco"]
+  }
+}

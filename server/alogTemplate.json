@@ -1,0 +1,527 @@
+{
+ "mode": "C",
+ "viewerMode": false,
+ "flavors": [
+  5,
+  5,
+  5,
+  5,
+  5,
+  5,
+  5,
+  5,
+  5
+ ],
+ "flavors_total_correction": 0,
+ "flavorlabels": [
+  "Acidity",
+  "Aftertaste",
+  "Clean Cup",
+  "Head",
+  "Fragrance",
+  "Sweetness",
+  "Aroma",
+  "Balance",
+  "Body"
+ ],
+ "flavorstartangle": 90,
+ "flavoraspect": 1,
+ "locale": "en",
+ "end_weight_est": 0,
+ "defects_weight": 0,
+ "volume": [
+  0,
+  0,
+  "gal"
+ ],
+ "density": [
+  0,
+  "g",
+  1,
+  "l"
+ ],
+ "density_roasted": [
+  0,
+  "g",
+  1,
+  "l"
+ ],
+ "roastertype": "Kaleido Serial",
+ "roastersize": 0.2,
+ "roasterheating": 3,
+ "machinesetup": "Serial",
+ "operator": "",
+ "organization": "",
+ "drumspeed": "",
+ "heavyFC": false,
+ "lowFC": false,
+ "lightCut": false,
+ "darkCut": false,
+ "drops": false,
+ "oily": false,
+ "uneven": false,
+ "tipping": false,
+ "scorching": false,
+ "divots": false,
+ "whole_color": 0,
+ "ground_color": 0,
+ "color_system": "",
+ "volumeCalcWeightIn": "",
+ "volumeCalcWeightOut": "",
+ "beansize_min": "0",
+ "beansize_max": "0",
+ "default_etypes": [
+  true,
+  true,
+  true,
+  true,
+  true
+ ],
+ "default_etypes_set": [
+  0,
+  0,
+  0,
+  0,
+  0
+ ],
+ "etypes": [
+  "Air",
+  "Drum",
+  "Damper",
+  "Burner",
+  "--"
+ ],
+ "phases": [
+  149,
+  152,
+  188,
+  232
+ ],
+ "zmax": 25,
+ "zmin": 0,
+ "ymax": 275,
+ "ymin": 0,
+ "moisture_greens": 0,
+ "greens_temp": 0,
+ "moisture_roasted": 0,
+ "extradevices": [
+  141,
+  139,
+  140
+ ],
+ "extraname1": [
+  "{3}",
+  "SV",
+  "{1}"
+ ],
+ "extraname2": [
+  "{0}",
+  "AT",
+  "AH"
+ ],
+ "extramathexpression1": [
+  "",
+  "",
+  ""
+ ],
+ "extramathexpression2": [
+  "",
+  "",
+  ""
+ ],
+ "extradevicecolor1": [
+  "#ad0427",
+  "#ff9300",
+  "#80531a"
+ ],
+ "extradevicecolor2": [
+  "#48abff",
+  "#33983c",
+  "black"
+ ],
+ "extraLCDvisibility1": [
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  true
+ ],
+ "extraLCDvisibility2": [
+  false,
+  true,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  true
+ ],
+ "extraCurveVisibility1": [
+  false,
+  true,
+  false,
+  true,
+  true,
+  true,
+  true,
+  true,
+  true,
+  true
+ ],
+ "extraCurveVisibility2": [
+  false,
+  false,
+  false,
+  true,
+  true,
+  true,
+  true,
+  true,
+  true,
+  true
+ ],
+ "extraDelta1": [
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false
+ ],
+ "extraDelta2": [
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false
+ ],
+ "extraFill1": [
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0
+ ],
+ "extraFill2": [
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0
+ ],
+ "extramarkersizes1": [
+  6,
+  6,
+  6
+ ],
+ "extramarkersizes2": [
+  6,
+  6,
+  6
+ ],
+ "extramarkers1": [
+  "None",
+  "None",
+  "None"
+ ],
+ "extramarkers2": [
+  "None",
+  "None",
+  "None"
+ ],
+ "extralinewidths1": [
+  1,
+  1,
+  1
+ ],
+ "extralinewidths2": [
+  1,
+  1,
+  1
+ ],
+ "extralinestyles1": [
+  "-",
+  "-",
+  "-"
+ ],
+ "extralinestyles2": [
+  "-",
+  "-",
+  "-"
+ ],
+ "extradrawstyles1": [
+  "default",
+  "default",
+  "default"
+ ],
+ "extradrawstyles2": [
+  "default",
+  "default",
+  "default"
+ ],
+ "externalprogram": "test.py",
+ "externaloutprogram": "out.py",
+ "extraNoneTempHint1": [
+  true,
+  false,
+  true
+ ],
+ "extraNoneTempHint2": [
+  true,
+  false,
+  true
+ ],
+ "alarmsetlabel": "",
+ "alarmflag": [],
+ "alarmguard": [],
+ "alarmnegguard": [],
+ "alarmtime": [],
+ "alarmoffset": [],
+ "alarmcond": [],
+ "alarmsource": [],
+ "alarmtemperature": [],
+ "alarmaction": [],
+ "alarmbeep": [],
+ "alarmstrings": [],
+ "backgroundpath": "",
+ "samplinginterval": 1.5,
+ "svLabel": "",
+ "svValues": [
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0
+ ],
+ "svRamps": [
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0
+ ],
+ "svSoaks": [
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0
+ ],
+ "svActions": [
+  -1,
+  -1,
+  -1,
+  -1,
+  -1,
+  -1,
+  -1,
+  -1
+ ],
+ "svBeeps": [
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false
+ ],
+ "svDescriptions": [
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  ""
+ ],
+ "pidKp": 14.999,
+ "pidKi": 0.07,
+ "pidPsetpointWeight": 1,
+ "pidDsetpointWeight": 1,
+ "pidSource": 1,
+ "svLookahead": 8,
+ "ramp_lookahead": 0,
+ "pidKp1": 15.000000000000002,
+ "pidKi1": 0.07,
+ "pidKd1": 0.06,
+ "pidKp2": 15.000000000000002,
+ "pidKi2": 0.07,
+ "pidKd2": 0.06,
+ "pidSchedule0": 537,
+ "pidSchedule1": 537,
+ "pidSchedule2": 537,
+ "gain_scheduling": false,
+ "gain_scheduling_on_SV": true,
+ "gain_scheduling_quadratic": false,
+ "devices": [
+  "Kaleido BT/ET",
+  "+Kaleido Heater/Fan",
+  "+Kaleido SV/AT",
+  "+Kaleido Drum/AH"
+ ],
+ "elevation": 0,
+ "loadlabels": [
+  "Heater",
+  "",
+  "",
+  ""
+ ],
+ "loadratings": [
+  1,
+  0,
+  0,
+  0
+ ],
+ "ratingunits": [
+  3,
+  0,
+  0,
+  0
+ ],
+ "sourcetypes": [
+  2,
+  0,
+  0,
+  0
+ ],
+ "load_etypes": [
+  4,
+  0,
+  0,
+  0
+ ],
+ "presssure_percents": [
+  false,
+  false,
+  false,
+  false
+ ],
+ "loadevent_zeropcts": [
+  0,
+  0,
+  0,
+  0
+ ],
+ "loadevent_hundpcts": [
+  100,
+  100,
+  100,
+  100
+ ],
+ "meterlabels": [
+  "",
+  ""
+ ],
+ "meterunits": [
+  3,
+  3
+ ],
+ "meterfuels": [
+  2,
+  2
+ ],
+ "metersources": [
+  0,
+  0
+ ],
+ "meterreads": [
+  [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ]
+ ],
+ "co2kg_per_btu": [
+  0.00006288,
+  0.00005291,
+  0.0002964
+ ],
+ "biogas_co2_reduction": 0.7562,
+ "preheatDuration": 0,
+ "preheatenergies": [
+  0,
+  0,
+  0,
+  0
+ ],
+ "betweenbatchDuration": 0,
+ "betweenbatchenergies": [
+  0,
+  0,
+  0,
+  0
+ ],
+ "coolingDuration": 0,
+ "coolingenergies": [
+  0,
+  0,
+  0,
+  0
+ ],
+ "betweenbatch_after_preheat": true,
+ "electricEnergyMix": 0,
+ "gasMix": 0,
+ "bbp_begin": "Start",
+ "bbp_time_added_from_prev": 0,
+ "bbp_endroast_epoch_msec": 0,
+ "bbp_endevents": [],
+ "bbp_dropevents": [],
+ "bbp_dropbt": 0,
+ "bbp_dropet": 0,
+ "bbp_drop_to_end": 0
+}

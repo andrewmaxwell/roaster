@@ -1,0 +1,12 @@
+{
+  "updated": "2026-10-14",
+  "batchGrams": 155,
+  "beans": {
+    "el_salvador_finca_miravalles_bourbon": {"batches": 4},
+    "espresso_monkey": {"batches": 1, "note": "Last batch. Both earlier batches (#24, #25) were REALLY GOOD."},
+    "nicaragua_acopio_suyatal": {"batches": 5},
+    "guatemala_finca_santa_ines_bourbon": {"batches": 3, "note": "1 lb (454 g), untried. Supplier: Sweet Maria's."},
+    "colombia_productores_de_buesaco": {"batches": 3, "note": "1 lb (454 g), untried. Supplier: Sweet Maria's."},
+    "colombian_supremo": {"batches": 6, "note": "About 6."}
+  }
+}

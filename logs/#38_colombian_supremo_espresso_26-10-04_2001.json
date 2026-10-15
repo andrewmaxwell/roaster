@@ -1,0 +1,335 @@
+{
+  "roast": 38,
+  "bean": "colombian_supremo",
+  "beanName": "Colombian Supremo",
+  "variant": "espresso",
+  "alog": "#38_colombian_supremo_espresso_26-10-04_2001.alog",
+  "startedAt": "2026-10-05T01:01:11.862Z",
+  "chargedAt": "2026-10-05T01:31:57.341Z",
+  "weightIn": 155,
+  "weightOut": 128.2,
+  "procedure": {
+    "version": 2,
+    "charge": {
+      "burner": 55,
+      "sv": 230
+    },
+    "steps": [
+      {
+        "bt": 154,
+        "burner": 45
+      },
+      {
+        "bt": 175,
+        "burner": 40,
+        "air": 40
+      },
+      {
+        "bt": 178,
+        "burner": 35
+      },
+      {
+        "bt": 190,
+        "burner": 30
+      },
+      {
+        "bt": 194,
+        "burner": 25
+      },
+      {
+        "bt": 198,
+        "burner": 15
+      }
+    ],
+    "drop": {
+      "bt": 207.4
+    }
+  },
+  "charge": {
+    "BT": 185.1
+  },
+  "tp": {
+    "t": 43.5,
+    "BT": 110.4
+  },
+  "fc": {
+    "t": 404.7,
+    "BT": 187.7
+  },
+  "sc": null,
+  "drop": {
+    "t": 587,
+    "BT": 207.7,
+    "reason": "temperature"
+  },
+  "beansOut": {
+    "t": 595.2,
+    "BT": 204.6
+  },
+  "steps": [
+    {
+      "index": 0,
+      "t": 219.2,
+      "BT": 154.8,
+      "bt": 154,
+      "burner": 45,
+      "overridden": []
+    },
+    {
+      "index": 1,
+      "t": 328.8,
+      "BT": 175.6,
+      "bt": 175,
+      "burner": 40,
+      "air": 40,
+      "overridden": []
+    },
+    {
+      "index": 2,
+      "t": 348.3,
+      "BT": 178.4,
+      "bt": 178,
+      "burner": 35,
+      "overridden": []
+    },
+    {
+      "index": 3,
+      "t": 423.3,
+      "BT": 190.5,
+      "bt": 190,
+      "burner": 30,
+      "overridden": []
+    },
+    {
+      "index": 4,
+      "t": 471.4,
+      "BT": 194.7,
+      "bt": 194,
+      "burner": 25,
+      "overridden": []
+    },
+    {
+      "index": 5,
+      "t": 505.9,
+      "BT": 198.5,
+      "bt": 198,
+      "burner": 15,
+      "overridden": []
+    }
+  ],
+  "overrides": [],
+  "alerts": [],
+  "pops": [
+    {
+      "t": 341.6,
+      "BT": 177.5,
+      "intensity": 41
+    },
+    {
+      "t": 341.7,
+      "BT": 177.5,
+      "intensity": 35
+    },
+    {
+      "t": 341.8,
+      "BT": 177.5,
+      "intensity": 16
+    },
+    {
+      "t": 380.3,
+      "BT": 184,
+      "intensity": 18
+    },
+    {
+      "t": 387.1,
+      "BT": 185.1,
+      "intensity": 14
+    },
+    {
+      "t": 388.1,
+      "BT": 185.3,
+      "intensity": 17
+    },
+    {
+      "t": 418.6,
+      "BT": 189.6,
+      "intensity": 13
+    },
+    {
+      "t": 423.4,
+      "BT": 190.5,
+      "intensity": 17
+    },
+    {
+      "t": 428.1,
+      "BT": 190.8,
+      "intensity": 16
+    },
+    {
+      "t": 430.4,
+      "BT": 190.8,
+      "intensity": 23
+    },
+    {
+      "t": 430.9,
+      "BT": 191.2,
+      "intensity": 31
+    },
+    {
+      "t": 432.1,
+      "BT": 191.2,
+      "intensity": 35
+    },
+    {
+      "t": 432.7,
+      "BT": 191.1,
+      "intensity": 16
+    },
+    {
+      "t": 433,
+      "BT": 191.1,
+      "intensity": 41
+    },
+    {
+      "t": 436,
+      "BT": 191.2,
+      "intensity": 13
+    },
+    {
+      "t": 436.5,
+      "BT": 191.2,
+      "intensity": 15
+    },
+    {
+      "t": 442.1,
+      "BT": 192.1,
+      "intensity": 15
+    },
+    {
+      "t": 443,
+      "BT": 192.1,
+      "intensity": 13
+    },
+    {
+      "t": 443.6,
+      "BT": 192.1,
+      "intensity": 15
+    },
+    {
+      "t": 449.2,
+      "BT": 193,
+      "intensity": 19
+    },
+    {
+      "t": 450.5,
+      "BT": 193.1,
+      "intensity": 33
+    },
+    {
+      "t": 452.9,
+      "BT": 193.4,
+      "intensity": 51
+    },
+    {
+      "t": 453,
+      "BT": 193.4,
+      "intensity": 40
+    },
+    {
+      "t": 453.1,
+      "BT": 193.4,
+      "intensity": 18
+    },
+    {
+      "t": 454.4,
+      "BT": 193.6,
+      "intensity": 14
+    },
+    {
+      "t": 457.4,
+      "BT": 193.3,
+      "intensity": 14
+    },
+    {
+      "t": 458.3,
+      "BT": 193.3,
+      "intensity": 25
+    },
+    {
+      "t": 460.4,
+      "BT": 193.5,
+      "intensity": 14
+    },
+    {
+      "t": 464.5,
+      "BT": 194.2,
+      "intensity": 31
+    },
+    {
+      "t": 466.3,
+      "BT": 194.5,
+      "intensity": 15
+    },
+    {
+      "t": 469.2,
+      "BT": 194.4,
+      "intensity": 15
+    },
+    {
+      "t": 470.1,
+      "BT": 194.3,
+      "intensity": 50
+    },
+    {
+      "t": 473.2,
+      "BT": 194.7,
+      "intensity": 18
+    },
+    {
+      "t": 473.6,
+      "BT": 194.7,
+      "intensity": 15
+    },
+    {
+      "t": 477,
+      "BT": 195.2,
+      "intensity": 18
+    },
+    {
+      "t": 477.2,
+      "BT": 195.2,
+      "intensity": 14
+    },
+    {
+      "t": 479.9,
+      "BT": 195.5,
+      "intensity": 14
+    },
+    {
+      "t": 481.5,
+      "BT": 195.6,
+      "intensity": 19
+    },
+    {
+      "t": 492.4,
+      "BT": 197.2,
+      "intensity": 20
+    },
+    {
+      "t": 507.4,
+      "BT": 198.5,
+      "intensity": 19
+    },
+    {
+      "t": 518.3,
+      "BT": 200,
+      "intensity": 15
+    },
+    {
+      "t": 562.4,
+      "BT": 205.1,
+      "intensity": 14
+    }
+  ],
+  "notes": []
+}

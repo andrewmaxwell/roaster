@@ -1,0 +1,124 @@
+{
+  "roast": 39,
+  "bean": "el_salvador_finca_miravalles_bourbon",
+  "beanName": "El Salvador Finca Miravalles Bourbon",
+  "variant": "espresso",
+  "alog": "#39_el_salvador_finca_miravalles_bourbon_espresso_26-10-11_1518.alog",
+  "startedAt": "2026-10-11T20:18:44.024Z",
+  "chargedAt": "2026-10-11T20:43:01.995Z",
+  "weightIn": 155,
+  "weightOut": 131.2,
+  "procedure": {
+    "version": 2,
+    "charge": {
+      "burner": 55,
+      "sv": 230
+    },
+    "steps": [
+      {
+        "bt": 150,
+        "burner": 45
+      },
+      {
+        "bt": 175,
+        "burner": 40,
+        "air": 40
+      },
+      {
+        "bt": 186,
+        "burner": 35
+      },
+      {
+        "bt": 190,
+        "burner": 30
+      },
+      {
+        "bt": 194,
+        "burner": 25
+      },
+      {
+        "bt": 198,
+        "burner": 15
+      }
+    ],
+    "drop": {
+      "bt": 205.7
+    }
+  },
+  "charge": {
+    "BT": 184.9
+  },
+  "tp": {
+    "t": 40.5,
+    "BT": 109.5
+  },
+  "fc": {
+    "t": 383.4,
+    "BT": 188
+  },
+  "sc": null,
+  "drop": {
+    "t": 549.5,
+    "BT": 206.4,
+    "reason": "temperature"
+  },
+  "beansOut": {
+    "t": 563,
+    "BT": 196.3
+  },
+  "steps": [
+    {
+      "index": 0,
+      "t": 189.2,
+      "BT": 151.3,
+      "bt": 150,
+      "burner": 45,
+      "overridden": []
+    },
+    {
+      "index": 1,
+      "t": 309.3,
+      "BT": 176.5,
+      "bt": 175,
+      "burner": 40,
+      "air": 40,
+      "overridden": []
+    },
+    {
+      "index": 2,
+      "t": 370.8,
+      "BT": 186.7,
+      "bt": 186,
+      "burner": 35,
+      "overridden": []
+    },
+    {
+      "index": 3,
+      "t": 412.8,
+      "BT": 190.4,
+      "bt": 190,
+      "burner": 30,
+      "overridden": []
+    },
+    {
+      "index": 4,
+      "t": 450.4,
+      "BT": 194.1,
+      "bt": 194,
+      "burner": 25,
+      "overridden": []
+    },
+    {
+      "index": 5,
+      "t": 484.9,
+      "BT": 198.7,
+      "bt": 198,
+      "burner": 15,
+      "overridden": []
+    }
+  ],
+  "overrides": [],
+  "alerts": [],
+  "pops": [],
+  "notes": []
+}

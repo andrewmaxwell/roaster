@@ -1,0 +1,44 @@
+{
+  "bean": "honduran_mwp_decaf",
+  "batchGrams": 155,
+  "charge": {
+    "burner": 45,
+    "sv": 230
+  },
+  "steps": [
+    {
+      "bt": 150,
+      "burner": 40
+    },
+    {
+      "bt": 175,
+      "burner": 35,
+      "air": 40
+    },
+    {
+      "bt": 189,
+      "burner": 30
+    },
+    {
+      "bt": 196,
+      "burner": 25
+    }
+  ],
+  "drop": {
+    "bt": 202.8
+  },
+  "reference": {
+    "roast": 29,
+    "fc": "6:48",
+    "drop": "9:57"
+  },
+  "notes": "Mark FC when multiple pops occur close together; hold settings. Don't increase heat to chase a brief FC dip. Expect RoR to sag to about 5 C/min around 7:30-8:00 and recover by itself.",
+  "history": [
+    {
+      "date": "2026-10-14",
+      "afterRoast": 40,
+      "change": "Initial procedure, transcribed from roasts #29 and #34 (the two with tasting notes): charge burner 45 / SV 230; burner 40 at 150, 35 + air 40 at 175, 30 at 189, 25 at 196; drop at 202.8. #29 is the reference.",
+      "why": "Both tasted roasts of this bean share one recipe and both were praised: #29 (rested 20 days) made an excellent latte with Colombian Supremo, and #34 (rested 16 days) a REALLY GOOD half-caf latte with the El Salvador Bourbon. Earlier roasts (#10, #18, #25) varied the charge burner (15-100%), SV, and step temperatures and ran 7:54-9:53, so they are history, not reference. In #29 and #34 the 175 step (burner 35, air 30->40) came at 5:30-5:58, FC at 6:48 (#29; #34 marked it late at 7:12, 187 C, so its 24.6% development is not trustworthy) and the drop landed at 203.3 at 9:33-9:57. The 202.8 drop trigger needs 3 readings at or above it and lands 0.2-0.5 past, so it should drop near the real 203.1-203.3. Step temperatures use the app's trigger rule (150 where Artisan fired at 150.3-152.5; 189 and 196 between the 188.5-190 and 195.9-196.4 where the manual cuts happened). RoR sags to 4.5-5 C/min at 7:30-8:00 and recovers on its own to 8 C/min at the drop; the Supremo-style burner-15 step at 198 is not used because the decaf was already dropping at 203 with 25%. Bean: Org. COMSA Royal Select MWP decaf Honduran from Burman. 155 g batch, 1 batch on hand."
+    }
+  ]
+}

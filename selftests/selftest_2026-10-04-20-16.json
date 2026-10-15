@@ -1,0 +1,117 @@
+{
+  "startedAt": "2026-10-04T20:16:45.099Z",
+  "checks": [
+    {
+      "name": "connects and reads temperatures",
+      "ok": true,
+      "detail": "BT 24.6 ET 24.3 AT 26",
+      "seconds": 1.257
+    },
+    {
+      "name": "heater safely off",
+      "ok": true,
+      "detail": "echoed (sends: HS×1 AH×1 HP×0)",
+      "seconds": 0.253
+    },
+    {
+      "name": "control: air",
+      "ok": true,
+      "detail": "echoed (sends: FC×1)",
+      "seconds": 0.252
+    },
+    {
+      "name": "control: drum",
+      "ok": true,
+      "detail": "echoed (sends: RC×1)",
+      "seconds": 0.253
+    },
+    {
+      "name": "control: cooling fan on",
+      "ok": true,
+      "detail": "echoed (sends: CS×1)",
+      "seconds": 0.251
+    },
+    {
+      "name": "control: cooling fan off",
+      "ok": true,
+      "detail": "echoed (sends: CS×1)",
+      "seconds": 0.251
+    },
+    {
+      "name": "control: setpoint",
+      "ok": true,
+      "detail": "echoed (sends: TS×1)",
+      "seconds": 0.252
+    },
+    {
+      "name": "control: auto mode on (heater still off)",
+      "ok": true,
+      "detail": "echoed (sends: AH×1)",
+      "seconds": 0.251
+    },
+    {
+      "name": "control: auto mode off",
+      "ok": true,
+      "detail": "echoed (sends: AH×1)",
+      "seconds": 0.252
+    },
+    {
+      "name": "control: heater switch on (burner at 0)",
+      "ok": true,
+      "detail": "echoed (sends: HS×1)",
+      "seconds": 0.252
+    },
+    {
+      "name": "control: heater switch off",
+      "ok": true,
+      "detail": "echoed (sends: HS×1)",
+      "seconds": 0.25
+    },
+    {
+      "name": "control: drum back to 90, air 30",
+      "ok": true,
+      "detail": "echoed (sends: RC×1 FC×1)",
+      "seconds": 0.251
+    },
+    {
+      "name": "manual burner heats",
+      "ok": false,
+      "detail": "not echoed: TS wants 250, reads 240",
+      "seconds": 15.067
+    },
+    {
+      "name": "cooling fan",
+      "ok": false,
+      "detail": "not echoed: TS wants 250, reads 240",
+      "seconds": 15.069
+    },
+    {
+      "name": "survives a cable pull",
+      "ok": false,
+      "detail": "not echoed: TS wants 250, reads 240",
+      "seconds": 47.614
+    },
+    {
+      "name": "shutdown: heater off, cool down, all off",
+      "ok": false,
+      "detail": "not echoed: TS wants 250, reads 240",
+      "seconds": 15.066
+    }
+  ],
+  "observations": {
+    "serial": "9CKFFR4Y2CL5"
+  },
+  "sends": {
+    "TU": 2,
+    "SC": 2,
+    "RD": 62,
+    "HS": 6,
+    "AH": 3,
+    "FC": 4,
+    "RC": 3,
+    "CS": 4,
+    "TS": 52,
+    "HP": 2
+  },
+  "passed": false
+}

@@ -1,0 +1,173 @@
+{
+  "startedAt": "2026-10-04T21:07:58.778Z",
+  "checks": [
+    {
+      "name": "connects and reads temperatures",
+      "ok": true,
+      "detail": "BT 57.5 ET 56.5 AT 42.5",
+      "seconds": 1.257
+    },
+    {
+      "name": "heater safely off",
+      "ok": true,
+      "detail": "echoed (sends: HS×1 AH×0 HP×0)",
+      "seconds": 0.252
+    },
+    {
+      "name": "control: air",
+      "ok": true,
+      "detail": "echoed (sends: FC×1)",
+      "seconds": 0.252
+    },
+    {
+      "name": "control: drum",
+      "ok": true,
+      "detail": "echoed (sends: RC×1)",
+      "seconds": 0.251
+    },
+    {
+      "name": "control: cooling fan on",
+      "ok": true,
+      "detail": "echoed (sends: CS×1)",
+      "seconds": 0.252
+    },
+    {
+      "name": "control: cooling fan off",
+      "ok": true,
+      "detail": "echoed (sends: CS×1)",
+      "seconds": 0.251
+    },
+    {
+      "name": "control: setpoint",
+      "ok": true,
+      "detail": "echoed (sends: TS×1)",
+      "seconds": 0.251
+    },
+    {
+      "name": "control: auto mode on (heater still off)",
+      "ok": true,
+      "detail": "echoed (sends: AH×1)",
+      "seconds": 0.252
+    },
+    {
+      "name": "control: auto mode off",
+      "ok": true,
+      "detail": "echoed (sends: AH×1)",
+      "seconds": 0.251
+    },
+    {
+      "name": "control: heater switch on (burner at 0)",
+      "ok": true,
+      "detail": "echoed (sends: HS×1)",
+      "seconds": 0.252
+    },
+    {
+      "name": "control: heater switch off",
+      "ok": true,
+      "detail": "echoed (sends: HS×1)",
+      "seconds": 0.251
+    },
+    {
+      "name": "control: drum back to 90, air 30",
+      "ok": true,
+      "detail": "echoed (sends: RC×1 FC×1)",
+      "seconds": 0.251
+    },
+    {
+      "name": "manual burner heats",
+      "ok": true,
+      "detail": "BT 50.3 → 56",
+      "seconds": 27.289
+    },
+    {
+      "name": "heats past the preheat SV (to 195)",
+      "ok": true,
+      "detail": "reached 195.2 in 7.9 min",
+      "seconds": 476.545
+    },
+    {
+      "name": "auto mode (PID) takes over",
+      "ok": true,
+      "detail": "HP read 0, 30, 20, 25, 50, 35, 25, 10 over 2 min",
+      "seconds": 120.395
+    },
+    {
+      "name": "heater off after the heat checks",
+      "ok": true,
+      "detail": "echoed (sends: HS×1 AH×1 HP×1)",
+      "seconds": 0.252
+    },
+    {
+      "name": "cooling fan",
+      "ok": true,
+      "detail": "echoed (sends: CS×1)",
+      "seconds": 0.252
+    },
+    {
+      "name": "survives a cable pull",
+      "ok": true,
+      "detail": "echoed (sends: )",
+      "seconds": 14.159
+    },
+    {
+      "name": "shutdown: heater off, cool down",
+      "ok": true,
+      "detail": "skipped at 163.6 (turned off by hand)",
+      "seconds": 35.301
+    },
+    {
+      "name": "all off",
+      "ok": true,
+      "detail": "echoed (sends: HS×0 AH×0 HP×0 FC×1 RC×1 CS×1)",
+      "seconds": 0.252
+    }
+  ],
+  "observations": {
+    "serial": "9CKFFR4Y2CL5",
+    "hpReadsInManual": 60,
+    "watchdog": {
+      "silentSeconds": 45,
+      "before": {
+        "BT": 195.2,
+        "HP": 60,
+        "HS": 1,
+        "AH": 0
+      },
+      "after": {
+        "BT": 205.3,
+        "HP": 60,
+        "HS": null,
+        "AH": 0
+      },
+      "verdict": "the roaster KEPT HEATING with no computer"
+    },
+    "setpointCap": {
+      "note": "manual mode, HP 60, TS 15 below BT, after 90 s",
+      "btChange": -15.7,
+      "hpReads": 60
+    },
+    "pidDuty": [
+      0,
+      30,
+      20,
+      25,
+      50,
+      35,
+      25,
+      10
+    ]
+  },
+  "sends": {
+    "TU": 3,
+    "SC": 3,
+    "RD": 547,
+    "HS": 7,
+    "FC": 5,
+    "RC": 4,
+    "CS": 6,
+    "TS": 5,
+    "AH": 5,
+    "HP": 2
+  },
+  "passed": true
+}

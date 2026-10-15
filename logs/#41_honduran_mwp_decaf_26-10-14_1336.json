@@ -1,0 +1,136 @@
+{
+  "roast": 41,
+  "bean": "honduran_mwp_decaf",
+  "beanName": "Honduran MWP Decaf",
+  "variant": null,
+  "alog": "#41_honduran_mwp_decaf_26-10-14_1336.alog",
+  "startedAt": "2026-10-14T18:36:13.936Z",
+  "chargedAt": "2026-10-14T18:50:35.598Z",
+  "weightIn": 140,
+  "weightOut": 121.6,
+  "procedure": {
+    "version": 2,
+    "charge": {
+      "burner": 55,
+      "sv": 230
+    },
+    "steps": [
+      {
+        "bt": 154,
+        "burner": 45
+      },
+      {
+        "bt": 175,
+        "burner": 40,
+        "air": 40
+      },
+      {
+        "bt": 178,
+        "burner": 35
+      },
+      {
+        "bt": 190,
+        "burner": 30
+      },
+      {
+        "bt": 194,
+        "burner": 25
+      },
+      {
+        "bt": 198,
+        "burner": 15
+      }
+    ],
+    "drop": {
+      "bt": 207.4
+    }
+  },
+  "charge": {
+    "BT": 184.7
+  },
+  "tp": {
+    "t": 39,
+    "BT": 112.6
+  },
+  "fc": {
+    "t": 328,
+    "BT": 187.2
+  },
+  "sc": null,
+  "drop": {
+    "t": 508.9,
+    "BT": 208,
+    "reason": "temperature"
+  },
+  "beansOut": {
+    "t": 522.4,
+    "BT": 196.7
+  },
+  "steps": [
+    {
+      "index": 0,
+      "t": 171.1,
+      "BT": 154.6,
+      "bt": 154,
+      "burner": 45,
+      "overridden": []
+    },
+    {
+      "index": 1,
+      "t": 258.2,
+      "BT": 175.9,
+      "bt": 175,
+      "burner": 40,
+      "air": 40,
+      "overridden": []
+    },
+    {
+      "index": 2,
+      "t": 273.2,
+      "BT": 178.8,
+      "bt": 178,
+      "burner": 35,
+      "overridden": []
+    },
+    {
+      "index": 3,
+      "t": 354.3,
+      "BT": 190.6,
+      "bt": 190,
+      "burner": 30,
+      "overridden": []
+    },
+    {
+      "index": 4,
+      "t": 394.8,
+      "BT": 194.6,
+      "bt": 194,
+      "burner": 25,
+      "overridden": []
+    },
+    {
+      "index": 5,
+      "t": 424.8,
+      "BT": 198.6,
+      "bt": 198,
+      "burner": 15,
+      "overridden": []
+    }
+  ],
+  "overrides": [],
+  "alerts": [
+    {
+      "t": 534.9,
+      "BT": 186.9,
+      "level": "urgent",
+      "text": "Stopped: heater off. Air and drum keep running to cool."
+    }
+  ],
+  "pops": [],
+  "notes": [
+    {
+      "date": "2026-10-14",
+      "text": "These beans are Honduran MWP decaf (Burman), but the roast ran the Colombian Supremo espresso procedure v2 by mistake: the bean selector was on Colombian Supremo at charge. Charge 55/SV 230, FC 5:28 at 187 C, dropped 208 C at 8:29 (usual decaf: FC ~6:48, drop 203 C at ~9:55). 140 g in, 121.6 g out. Not a reference for either procedure."
+    }
+  ]
+}
