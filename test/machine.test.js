@@ -40,6 +40,24 @@ for (const reconnect of [false, true]) {
   });
 }
 
+test('the first BT sends the held-off heat right away, not a poll later', async () => {
+  const clock = createVirtualClock();
+  const sim = new SimKaleido({clock});
+  const machine = new Machine({clock, openTransport: () => sim.open()});
+  let firstBT;
+  machine.once('sample', (s) => (firstBT = s.t));
+  machine.set(PREHEAT);
+  machine.run();
+  try {
+    await clock.until(() => sim.m.HS === 1, 10_000, 10);
+    assert.ok(clock.now() - firstBT < 500, `${clock.now() - firstBT} ms`);
+  } finally {
+    const stopped = machine.stop();
+    await clock.advance(5000);
+    await stopped;
+  }
+});
+
 test('monitoring with no desired controls never writes controls, even without BT', async () => {
   const clock = createVirtualClock();
   const sim = new SimKaleido({clock});

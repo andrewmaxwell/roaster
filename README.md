@@ -81,7 +81,7 @@ Roast numbers continue from the highest `#` in `logs/`.
 
 ## Improving a procedure
 
-In Claude Code, ask "analyze roast #38" or "analyze my last Colombian Supremo roasts". Claude reads the roast's log, the bean's earlier roasts, and your tasting notes. It reports how the roast compared with the reference: RoR crash or flick, development time and %, FC temp, and weight loss. Then it proposes edits to the procedure. See `CLAUDE.md`.
+In Claude Code, ask "analyze roast #38" or "analyze my last Colombian Supremo roasts". Claude reads the roast's log, the bean's earlier roasts, and your tasting notes. It reports how the roast compared with the reference: RoR crash or flick, development time and %, FC temp, and weight loss. Then it proposes edits to the procedure. See `AGENTS.md`.
 
 ## Trust path (before real beans)
 

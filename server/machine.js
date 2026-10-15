@@ -208,7 +208,10 @@ export class Machine extends EventEmitter {
     if ('HS' in msg.vars) this.lastHeaterReport = this.lastRx;
     if ('BT' in msg.vars) {
       this.lastReading = this.lastRx;
-      this.awaitingReading = false;
+      if (this.awaitingReading) {
+        this.awaitingReading = false;
+        this.retargetHeat();
+      }
       this.setBlind(false);
       this.emit('sample', {t: this.lastRx, ...this.state});
     }
@@ -218,11 +221,17 @@ export class Machine extends EventEmitter {
   setBlind(blind) {
     if (this.blind === blind) return;
     this.blind = blind;
+    this.retargetHeat();
+    this.emit('blind', blind);
+  }
+
+  // The heat controls' target just changed: resend now, and fix any write
+  // still queued with the old value.
+  retargetHeat() {
     for (const k in HEAT_OFF) {
       delete this.lastSent[k];
       if (this.queue.has(k)) this.queue.set(k, this.target(k));
     }
-    this.emit('blind', blind);
   }
 
   // Ping until the machine answers, then set Celsius and the start guard

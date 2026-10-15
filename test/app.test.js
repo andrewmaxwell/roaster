@@ -115,6 +115,7 @@ test('serves the page and its scripts, and nothing else in the folder', async ()
     '/server/app.js',
     '/package.json',
     '/CLAUDE.md',
+    '/AGENTS.md',
     '/procedures/colombian_supremo.json',
     '/node_modules/ws/package.json',
     '/ui/../server/app.js',

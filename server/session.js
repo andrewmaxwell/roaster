@@ -115,6 +115,14 @@ export class Session extends EventEmitter {
     this.machine.off('blind', this.onBlind);
   }
 
+  // Weight out or notes edited while the batch is still live (recorder.js).
+  // A restart restores the batch from the saved session and rewrites its
+  // roast log, so the edit has to be saved there too.
+  editBatch(change) {
+    change(this.batch);
+    this.emit('persist');
+  }
+
   setPhase(phase) {
     this.phase = phase;
     this.apply();
