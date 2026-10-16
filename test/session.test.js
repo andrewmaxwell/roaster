@@ -341,10 +341,12 @@ test('BT past any sane drop drops, whatever the procedure says', async () => {
   await clock.until(() => session.phase === 'READY', HOUR, 5000);
   sim.chargeBeans(155);
   await clock.until(() => session.batch?.tp, HOUR, 1500);
-  // A typo that got past the procedure check (an older saved batch, say).
-  session.batch.proc = {...session.batch.proc, drop: {bt: 235}};
+  // A typo that got past the procedure check (an older saved batch, say),
+  // and nothing turning the burner down.
+  session.batch.proc = {...session.batch.proc, steps: [], drop: {bt: 235}};
   session.tracker.proc = session.batch.proc;
-  session.override('burner', 100);
+  session.planned.HP = 100;
+  session.apply();
   await clock.until(() => log.some((x) => x.e === 'drop'), HOUR, 1500);
   const drop = log.find((x) => x.e === 'drop').b;
   assert.equal(drop.reason, 'over temperature');
@@ -353,38 +355,47 @@ test('BT past any sane drop drops, whatever the procedure says', async () => {
   await finish(ctx);
 });
 
-test('an override beats the procedure until released', async () => {
-  const ctx = setup();
-  const {clock, sim, session, log} = ctx;
-  session.start();
-  autopilot(session, sim, clock, {batches: [ESPRESSO]});
-  await clock.until(() => log.some((x) => x.e === 'tp'), 2 * HOUR, 1500);
-  session.override('burner', 70);
-  // Steps at 154 and 175 come and go; the burner stays where the user put it.
-  await clock.until(() => session.batch.steps.length >= 2, HOUR, 1500);
-  await clock.advance(5000);
-  assert.equal(sim.m.HP, 70);
-  assert.deepEqual(session.batch.steps[1].overridden, ['burner']);
-  assert.equal(sim.m.FC, 40, 'air still follows the procedure');
-  session.release('burner');
-  await clock.advance(5000);
-  assert.equal(sim.m.HP, 40);
-  await finish(ctx);
-});
-
-test('done mid-roast shuts down after the drop instead of preheating', async () => {
-  const ctx = setup();
+test('opening the door mid-roast is the drop, and the beans are out', async () => {
+  const ctx = setup({dropRate: 0});
   const {clock, sim, session, log} = ctx;
   session.start();
   session.selectBatch(ESPRESSO);
   await clock.until(() => session.phase === 'READY', HOUR, 5000);
   sim.chargeBeans(155);
-  await clock.until(() => session.phase === 'ROASTING', HOUR, 1500);
-  session.done();
-  await clock.until(() => log.some((x) => x.e === 'drop'), HOUR, 5000);
+  // Well before the procedure's drop: right after first crack.
+  await clock.until(() => session.batch?.steps.length >= 3, HOUR, 1500);
+  const peak = sim.s.BT;
+  const opened = clock.now();
   sim.discharge();
-  assert.equal(session.phase, 'SHUTDOWN');
-  await clock.until(() => session.phase === 'OFF', 2 * HOUR, 5000);
+  await clock.until(() => log.some((x) => x.e === 'drop'), 60_000, 1500);
+  const found = clock.now() - opened;
+  const b = log.find((x) => x.e === 'drop').a;
+  assert.equal(b.drop.reason, 'door');
+  assert.ok(found < 20_000, `found ${found / 1000} s after`);
+  // Backdated to the reading before the fall.
+  assert.ok(b.drop.t <= opened && opened - b.drop.t < 3000);
+  assert.ok(Math.abs(b.drop.BT - peak) < 1, `${b.drop.BT} vs ${peak}`);
+  assert.ok(b.beansOut, 'beans out with it');
+  assert.equal(session.phase, 'PREHEAT');
+  assert.ok(!said(log).some((x) => /drop now/i.test(x)));
+  await clock.advance(5000);
+  assert.equal(sim.m.HS, 1, 'preheating again');
+  assert.equal(sim.m.CS, 1, 'cooling fan on');
+  await finish(ctx);
+});
+
+test('a whole roast with the door shut never looks like the door opening', async () => {
+  const ctx = setup();
+  const {clock, sim, session, log} = ctx;
+  session.start();
+  autopilot(session, sim, clock, {batches: [ESPRESSO, POUROVER]});
+  await clock.until(
+    () => log.filter((x) => x.e === 'batchComplete').length === 2,
+    3 * HOUR,
+    5000,
+  );
+  const drops = log.filter((x) => x.e === 'drop').map((x) => x.b.reason);
+  assert.deepEqual(drops, ['temperature', 'temperature']);
   await finish(ctx);
 });
 
@@ -551,11 +562,9 @@ test('an early drop keeps the heat off until the beans are out', async () => {
   session.dropNow();
   await clock.advance(20_000);
   assert.equal(session.phase, 'PREHEAT');
-  assert.equal(sim.m.HS, 0);
-  // An empty drum doesn't read 10 °C under an early drop, so it's the button.
-  await clock.advance(20_000);
-  assert.ok(!log.some((x) => x.e === 'beansOut'));
-  session.beansOut();
+  assert.equal(sim.m.HS, 0, 'no heat while the beans are still in');
+  // The autopilot opens the door 30 s after the drop.
+  await clock.until(() => log.some((x) => x.e === 'beansOut'), 60_000, 1500);
   await clock.advance(5000);
   assert.equal(sim.m.HS, 1);
   await finish(ctx);

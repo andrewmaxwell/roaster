@@ -3,7 +3,7 @@
 // actions back over the WebSocket.
 
 import {createCharts} from './ui/charts.js';
-import {say, chime, unlock, busy} from './ui/sound.js';
+import {say, chime, crack, unlock, busy} from './ui/sound.js';
 import {listen, clusters} from './ui/pops.js';
 
 const $ = (id) => document.getElementById(id);
@@ -20,7 +20,9 @@ let samples = [];
 let procedures = [];
 const references = {}; // roast number or file → curve (null while loading)
 let ws = null;
-let mic = null; // {stop, pops: [ms], level}
+let mic = null; // {stop, pops: [ms]} while listening
+let micState = 'off'; // off, starting, on, or the error that stopped it
+let started = false; // the Start click: sound, and the mic, are allowed
 let serverUp = false;
 let lostServer = false; // a connection failed or dropped (not just loading)
 
@@ -111,6 +113,9 @@ function handle(msg) {
     say(msg.text, msg.urgent);
   } else if (msg.type === 'chime') {
     chime(msg.kind);
+  } else if (msg.type === 'simPops') {
+    for (const {kind, delayMs} of msg.pops)
+      setTimeout(() => crack(kind), delayMs);
   } else if (msg.type === 'error') {
     toast(msg.message);
   }
@@ -210,6 +215,7 @@ function renderBar() {
   $('phaseText').textContent = phaseName();
   const b = state.batch;
   $('alarm').className = b?.drop && !b.beansOut ? 'on' : '';
+  $('simBanner').className = state.mode === 'sim' ? 'on' : '';
   renderStop();
 }
 
@@ -229,14 +235,11 @@ function renderSide() {
     s.next,
     s.batch && [s.batch.number, s.batch.fc, s.batch.drop],
     s.batch && [s.batch.beansOut, s.batch.steps.length, s.batch.weightIn],
-    s.planned,
-    s.overrides,
-    s.doneRequested,
     s.pendingCharge,
     s.lastBatch,
     s.alerts,
-    procedures.length,
-    !!mic,
+    procedures,
+    micState,
     [...confirming],
   ]);
   if (key === sideKey) return;
@@ -329,43 +332,18 @@ function roastSection() {
   const b = state.batch;
   if (state.phase !== 'ROASTING' || !b) return '';
   const variant = b.variant ? ` (${esc(b.variant)})` : '';
-  const ctrl = (name, key, label) => {
-    const value = state.overrides[key] ?? state.planned[key];
-    const manual = key in state.overrides;
-    return `<div class="control">
-      <span>${label}</span>
-      <span class="pct">${f(value)}%</span>
-      <span class="row">
-        <button data-act="nudge" data-control="${name}" data-delta="-5">−5</button>
-        <button data-act="nudge" data-control="${name}" data-delta="5">+5</button>
-        ${manual ? `<span class="tag">manual</span><button data-act="release" data-control="${name}">Back to procedure</button>` : ''}
-      </span>
-    </div>`;
-  };
-  // One big button that's always the next thing to press: first crack, then
-  // the drop (second crack included). Before first crack, a small Drop now
-  // covers a roast that has to end early.
-  const drop = (cls) =>
-    `<button data-act="dropNow" class="${cls} ${confirmClass('drop')}">${
-      confirming.has('drop') ? 'Click again: drop now' : 'Drop now'
-    }</button>`;
+  // The one button: first crack. The drop is automatic, and dropping early
+  // (second crack, smoke) is just opening the door, which the app sees.
   return section(
     `#${b.number ?? ''} ${esc(b.beanName)}${variant}, ${f(b.weightIn)} g`,
     `<div class="row" style="flex-direction: column; align-items: stretch">
        ${
          b.fc
-           ? `<p class="note">First crack at ${mmss(b.fc.t - b.charge.t)}. <span id="devInfo"></span></p>
-              ${drop('big')}
-              <p class="note">Second crack, or any time: click twice.</p>`
-           : `<button class="big" data-act="markFC">First crack</button>
-              ${drop('')}`
+           ? `<p class="note">First crack at ${mmss(b.fc.t - b.charge.t)}. <span id="devInfo"></span></p>`
+           : '<button class="big" data-act="markFC">First crack</button>'
        }
-     </div>
-     <div style="margin-top: 10px">
-       ${ctrl('burner', 'HP', 'Burner')}
-       ${ctrl('air', 'FC', 'Air')}
-     </div>
-     ${state.doneRequested ? '<p class="note">Shutting down after this batch.</p>' : ''}`,
+       <p class="note">The drop is automatic. To drop early, just open the door.</p>
+     </div>`,
     'batch',
   );
 }
@@ -410,12 +388,12 @@ function stepsSection() {
   );
 }
 
-// Between batches: the next beans, or the end of the day. (Mid-roast it's
-// left out: the next beans are picked during the preheat after the drop.)
+// Between batches: the next beans. (Mid-roast it's left out: the next beans
+// are picked during the preheat after the drop.) The day ends with STOP.
 function nextSection() {
   const {phase, next} = state;
   if (phase !== 'PREHEAT' && phase !== 'READY') return '';
-  const done = `<button data-act="done" class="${confirmClass('done')}">${confirming.has('done') ? 'Click again: done for today' : 'Done for today'}</button>`;
+  const done = '<p class="note">Done for today? Press STOP.</p>';
   if (next && !nextSection.editing) {
     const planned = procedures.find((p) => p.bean === next.bean)?.batchGrams;
     const off =
@@ -426,11 +404,12 @@ function nextSection() {
       'Next beans',
       `<div class="row">${esc(beanName(next.bean))}${next.variant ? ` (${esc(next.variant)})` : ''}, ${f(next.weightIn)} g${off}
          <button data-act="editNext">Change</button></div>
-       <div class="row" style="margin-top: 6px">${done}</div>`,
+       ${done}`,
     );
   }
   // No bean chosen until someone chooses one: a default here is how #41's
-  // decaf was roasted on the Colombian Supremo procedure.
+  // decaf was roasted on the Colombian Supremo procedure. The server sends
+  // only beans in stock, most recently roasted first.
   const options = procedures
     .map((p) => `<option value="${esc(p.bean)}">${esc(p.name)}</option>`)
     .join('');
@@ -445,7 +424,7 @@ function nextSection() {
        <button class="primary" data-act="selectBatch">Set</button>
        ${next ? '<button data-act="cancelEdit">Cancel</button>' : ''}
      </div>
-     ${next ? '' : `<div class="row" style="margin-top: 6px"><span class="note">or</span> ${done}</div>`}`,
+     ${next ? '' : done}`,
   );
 }
 
@@ -514,20 +493,65 @@ function simSection() {
   );
 }
 
-// Phases with a batch on the way: when crack listening is worth having on
-// (turn it on before the charge, not mid-roast).
+// Crack listening is on whenever a batch could be on the way, from the
+// Start click (browsers allow the mic only after one) to the end of the day.
 const ACTIVE = ['PREHEAT', 'READY', 'ROASTING'];
 
 function micSection() {
   if (!ACTIVE.includes(state.phase)) return '';
+  const text = {
+    off: 'Off until you click Start.',
+    starting: 'Starting…',
+    on: 'Listening. Hints only: you still press First crack. <span id="micInfo"></span>',
+  };
   return section(
     'Crack listening',
-    mic
-      ? `<div class="row">Listening <span class="note" id="micInfo"></span>
-           <button data-act="micOff">Stop</button></div>`
-      : `<div class="row"><button data-act="micOn">Listen for cracks</button>
-           <span class="note">Hints only; you still press the buttons.</span></div>`,
+    `<p class="note">${text[micState] ?? `Off: ${esc(micState)}`}</p>`,
   );
+}
+
+async function startMic() {
+  if (mic || micState === 'starting') return;
+  micState = 'starting';
+  const pops = [];
+  try {
+    const stop = await listen({
+      onPop: (intensity) => {
+        if (busy()) return; // our own speech or chime, not the beans
+        pops.push(Date.now());
+        act('pop', {intensity});
+        renderHint();
+      },
+      onLevel: (level) => {
+        const el = $('micInfo');
+        if (el) el.textContent = `(background ${(level * 1000).toFixed(1)})`;
+      },
+    });
+    mic = {stop, pops};
+    micState = 'on';
+    // The session may have ended while the mic was starting.
+    if (!ACTIVE.includes(state?.phase)) stopMic();
+  } catch (err) {
+    micState =
+      err.name === 'NotAllowedError'
+        ? 'the microphone is blocked for this page'
+        : err.message;
+  }
+  renderSide();
+}
+
+function stopMic() {
+  mic?.stop();
+  mic = null;
+  micState = 'off';
+}
+
+// On for an active session, off otherwise. (A mic that failed to start
+// isn't retried until the next session.)
+function syncMic() {
+  const want = started && ACTIVE.includes(state?.phase);
+  if (want && micState === 'off') startMic();
+  else if (!want && micState !== 'starting') stopMic();
 }
 
 // Fill in the variant list for the chosen bean.
@@ -545,16 +569,8 @@ function syncVariants() {
 const HANDLERS = {
   startSession: () => act('startSession'),
   markFC: () => act('markFC'),
-  dropNow: () => confirmed('drop', rerenderSide) && act('dropNow'),
   simCharge: () => act('simCharge'),
   simDischarge: () => act('simDischarge'),
-  release: (el) => act('release', {control: el.dataset.control}),
-  nudge: (el) => {
-    const key = el.dataset.control === 'burner' ? 'HP' : 'FC';
-    const now = state.overrides[key] ?? state.planned[key] ?? 0;
-    const value = Math.max(0, Math.min(100, now + Number(el.dataset.delta)));
-    act('override', {control: el.dataset.control, value});
-  },
   editNext: () => {
     nextSection.editing = true;
     loadProcedures();
@@ -590,35 +606,8 @@ const HANDLERS = {
     if (!(grams > 0)) return toast('Enter the weight in grams.');
     act('setWeightOut', {number: Number(el.dataset.number), grams});
   },
-  done: () => confirmed('done', rerenderSide) && act('done'),
   dismissCharge: () =>
     confirmed('dismissCharge', rerenderSide) && act('dismissCharge'),
-  micOn: async () => {
-    const pops = [];
-    try {
-      const stop = await listen({
-        onPop: (intensity) => {
-          if (busy()) return; // our own speech or chime, not the beans
-          pops.push(Date.now());
-          act('pop', {intensity});
-          renderHint();
-        },
-        onLevel: (level) => {
-          const el = $('micInfo');
-          if (el) el.textContent = `(background ${(level * 1000).toFixed(1)})`;
-        },
-      });
-      mic = {stop, pops};
-    } catch (err) {
-      toast(`Microphone: ${err.message}`);
-    }
-    renderSide();
-  },
-  micOff: () => {
-    mic?.stop();
-    mic = null;
-    renderSide();
-  },
 };
 
 $('side').addEventListener('click', (e) => {
@@ -730,7 +719,7 @@ function renderHint() {
       text =
         '🔊 Pops: first crack? Press First crack if you hear several close together.';
     else if (b.fc && last.BT > b.fc.BT + 8)
-      text = '🔊 Pops: second crack? Press Drop now if you want it out.';
+      text = '🔊 Pops: second crack? Open the door if you want them out.';
   }
   el.textContent = text;
   el.className = text ? 'on' : '';
@@ -839,8 +828,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
 // ---- render everything
 
 function renderAll() {
-  // The session is over: stop listening (its section is gone).
-  if (mic && !ACTIVE.includes(state.phase)) HANDLERS.micOff();
+  syncMic();
   renderBar();
   renderSide();
   renderReadouts(samples.at(-1));
@@ -871,7 +859,9 @@ function loadProcedures() {
 
 $('start').querySelector('button').onclick = () => {
   unlock();
+  started = true;
   $('start').remove();
+  if (state) renderAll();
 };
 loadProcedures();
 connect();

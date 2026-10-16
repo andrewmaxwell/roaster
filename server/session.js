@@ -36,6 +36,13 @@ const UNCHOSEN_REPEAT_MS = 30_000; // beans charged with none chosen
 const BEANS_OUT_FALL = 10;
 const BEANS_OUT_MS = 30_000;
 const RECORD_AFTER_DROP_MS = 60_000; // after the drop, once the beans are out
+// The door opened mid-roast: BT this far under its peak of the last
+// windowMs, on `confirm` readings in a row, after TP. That's how the person
+// drops early (there's no button). Between TP and the drop of all 39 real
+// roasts with both, BT never fell more than 0.7 °C within 30 s, except
+// where the beans came out before Artisan's drop mark (#1, #4); after a real
+// discharge it falls 5 °C in 7.5-22.5 s (median about 10).
+const DOOR = {fall: 5, windowMs: 30_000, confirm: 2};
 const DROP_WARNING_S = 30;
 const COOL_BEFORE_DROP_C = 1; // cooling fan on this far below the drop temp
 // Cooling fan off this long after the beans are out: the tray has them at
@@ -98,7 +105,6 @@ export class Session extends EventEmitter {
     this.pendingCharge = null; // {t, BT}: a charge with no beans chosen
     this.tracker = null;
     this.planned = {}; // procedure's current burner/air during a roast
-    this.overrides = {}; // user's burner/air, which beat the procedure's
     this.cooling = false;
     this.coolUntil = null; // when the cooling fan turns itself off
     this.doneRequested = false;
@@ -167,8 +173,8 @@ export class Session extends EventEmitter {
           TS: this.batch.proc.charge.sv,
           HS: 1,
           AH: 0,
-          HP: this.overrides.HP ?? this.planned.HP,
-          FC: this.overrides.FC ?? this.planned.FC,
+          HP: this.planned.HP,
+          FC: this.planned.FC,
           RC: p.drum,
           CS,
         };
@@ -237,7 +243,8 @@ export class Session extends EventEmitter {
     this.emit('persist');
   }
 
-  // (Second crack is a drop too: this button.)
+  // The person drops by opening the door (see doorOpened), so the UI has no
+  // button for this; tests and the autopilot use it for an early drop.
   dropNow() {
     this.roasting('drop');
     this.drop('button');
@@ -262,41 +269,20 @@ export class Session extends EventEmitter {
     this.emit('persist');
   }
 
-  // control: 'burner' or 'air'. Takes that control away from the procedure
-  // until release().
-  override(control, value) {
-    const b = this.roasting('override');
-    const key = {burner: 'HP', air: 'FC'}[control];
-    if (!key) throw new Error(`can't override ${control}`);
-    if (!(value >= 0 && value <= 100)) throw new Error('0-100%');
-    this.overrides[key] = value;
-    b.overrides.push({...this.mark(), control, value});
-    this.apply();
-    this.emit('persist');
-  }
-
-  release(control) {
-    const b = this.roasting('release');
-    const key = {burner: 'HP', air: 'FC'}[control];
-    delete this.overrides[key];
-    b.overrides.push({...this.mark(), control, value: null});
-    this.apply();
-    this.emit('persist');
-  }
-
   // STOP: heater off now, whatever is happening. Mid-roast that's a drop
   // (the beans have to come out) and then the end of the session; the air
-  // and drum keep running to cool, as in any shutdown.
+  // and drum keep running to cool, as in any shutdown. Between batches it's
+  // also how the day ends, so there it's no alarm, just the shutdown.
   emergencyStop() {
     if (this.phase === 'ROASTING') {
       this.doneRequested = true;
       this.drop('emergency stop');
+      this.alert(
+        'urgent',
+        'Stopped: heater off. Air and drum keep running to cool.',
+      );
     } else if (this.phase !== 'SHUTDOWN' && this.phase !== 'OFF')
       this.shutdown();
-    this.alert(
-      'urgent',
-      'Stopped: heater off. Air and drum keep running to cool.',
-    );
   }
 
   // Pops the browser's microphone heard ({intensity}); stamped on arrival.
@@ -307,15 +293,13 @@ export class Session extends EventEmitter {
     (b.pops ??= []).push({...this.mark(), intensity});
   }
 
-  // Done for the day. Mid-roast, this takes effect at the drop.
+  // Done for the day, between batches: the autopilot's end (the person
+  // presses STOP, which is the same there).
   done() {
     if (this.phase === 'SHUTDOWN' || this.phase === 'OFF') return;
-    this.next = null;
-    if (this.phase === 'ROASTING') {
-      this.doneRequested = true;
-      this.say('Shutting down after this batch.');
-      this.emit('persist');
-    } else this.shutdown();
+    if (this.phase === 'ROASTING')
+      throw new Error("can't end the day mid-roast");
+    this.shutdown();
   }
 
   // ---- machine events
@@ -528,7 +512,6 @@ export class Session extends EventEmitter {
       drop: null,
       beansOut: null,
       steps: [],
-      overrides: [],
       alerts: [],
     };
     this.tracker = new RoastTracker(proc);
@@ -536,7 +519,6 @@ export class Session extends EventEmitter {
       HP: proc.charge.burner,
       FC: proc.charge.air ?? this.preheat.air,
     };
-    this.overrides = {};
     this.alarms = {};
     this.setPhase('ROASTING');
     this.machine.event(1);
@@ -552,6 +534,13 @@ export class Session extends EventEmitter {
     if (this.phase !== 'ROASTING') return; // dropped
     const b = this.batch;
     const now = s.t;
+    if (b.tp) {
+      const at = this.doorOpened(s);
+      if (at) {
+        this.drop('door', at);
+        return this.beansOut();
+      }
+    }
     // The backstop: as many readings as a trigger needs, past any sane drop.
     this.overCount = s.BT >= MAX_BT_C ? (this.overCount ?? 0) + 1 : 0;
     if (this.overCount >= this.tracker.confirm) {
@@ -599,6 +588,22 @@ export class Session extends EventEmitter {
     }
   }
 
+  // The reading the door opened at (BT's peak just before the fall), if it
+  // has: see DOOR.
+  doorOpened(s) {
+    const since = this.recent.filter(
+      (x) =>
+        x.BT != null && s.t - x.t <= DOOR.windowMs && x.t >= this.batch.tp.t,
+    );
+    if (!since.length) return null;
+    const peak = since.reduce((a, x) => (x.BT >= a.BT ? x : a));
+    const last = this.recent.slice(-DOOR.confirm);
+    if (last.length < DOOR.confirm) return null;
+    if (!last.every((x) => x.BT != null && x.BT <= peak.BT - DOOR.fall))
+      return null;
+    return {t: peak.t, BT: peak.BT};
+  }
+
   handleTracker(s) {
     for (const e of this.tracker.feed(s)) {
       if (e.type === 'tp') {
@@ -612,11 +617,7 @@ export class Session extends EventEmitter {
   applyStep(index, step, s) {
     if (step.burner != null) this.planned.HP = step.burner;
     if (step.air != null) this.planned.FC = step.air;
-    const overridden = [];
-    if (step.burner != null && 'HP' in this.overrides)
-      overridden.push('burner');
-    if (step.air != null && 'FC' in this.overrides) overridden.push('air');
-    const entry = {index, t: s.t, BT: s.BT, ...step, overridden};
+    const entry = {index, t: s.t, BT: s.BT, ...step};
     this.batch.steps.push(entry);
     this.apply();
     this.chime('step');
@@ -624,10 +625,11 @@ export class Session extends EventEmitter {
     this.emit('persist');
   }
 
-  drop(reason) {
+  // at: when it happened, if earlier than now (the door: see doorOpened).
+  drop(reason, at = null) {
     const b = this.batch;
     if (b.drop) return;
-    b.drop = {...this.mark(), reason};
+    b.drop = {...(at ?? this.mark()), reason};
     this.tracker.dropped = true;
     // Burner to 0 while still in manual mode, then back to preheating, with
     // the heater off until the beans are out (see desiredState).
@@ -635,8 +637,9 @@ export class Session extends EventEmitter {
     this.machine.event(8);
     this.cooling = true;
     this.coolUntil = null; // counted from when the beans are out
-    this.overrides = {};
-    this.say('Drop now!', {urgent: true});
+    // The door: the person dropped them, so there's nothing to call for.
+    if (reason === 'door') this.say('Dropped.');
+    else this.say('Drop now!', {urgent: true});
     this.alarms.drop = this.clock.now();
     if (this.doneRequested) this.shutdown();
     else this.setPhase('PREHEAT');
@@ -654,7 +657,6 @@ export class Session extends EventEmitter {
     // Not beansOut: they may still be in the drum, and preheat's heater
     // stays off until the button says otherwise (or a discharge is seen).
     this.tracker.dropped = true;
-    this.overrides = {};
     this.cooling = true;
     this.coolUntil = null;
     this.alarms.drop = this.clock.now();
@@ -759,7 +761,6 @@ export class Session extends EventEmitter {
       batch: this.batch && {...this.batch, samples: undefined}, // = log
       tracker: this.tracker?.toJSON() ?? null,
       planned: this.planned,
-      overrides: this.overrides,
       cooling: this.cooling,
       coolUntil: this.coolUntil,
       doneRequested: this.doneRequested,
@@ -774,7 +775,6 @@ export class Session extends EventEmitter {
       // again: charging a drum that cooled off would ruin the batch.
       phase: saved.phase === 'READY' ? 'PREHEAT' : saved.phase,
       planned: saved.planned,
-      overrides: saved.overrides,
       cooling: saved.cooling,
       coolUntil: saved.coolUntil ?? null,
       doneRequested: saved.doneRequested,

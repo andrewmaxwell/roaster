@@ -246,6 +246,19 @@
     padding: 1px 6px;
     border-radius: 4px;
   }
+  #simBanner {
+    display: none;
+    padding: 4px 16px;
+    background: var(--primary);
+    color: var(--primary-ink);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-align: center;
+  }
+  #simBanner.on {
+    display: block;
+  }
   #hint {
     display: none;
     padding: 10px 16px;
@@ -328,18 +341,6 @@
   table.steps tr.next {
     font-weight: 700;
   }
-  .control {
-    display: grid;
-    grid-template-columns: 4.5em auto 1fr;
-    gap: 6px;
-    align-items: center;
-    margin-bottom: 6px;
-  }
-  .control .pct {
-    font-size: 22px;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-  }
   .tag {
     font-size: 12px;
     padding: 1px 6px;
@@ -396,6 +397,7 @@
   }
 </style>
 
+<div id="simBanner">SIMULATOR: NOT THE REAL ROASTER</div>
 <div id="bar">
   <div class="readout hero">
     <span class="label">Roast time</span>
@@ -452,5 +454,7 @@
   <div id="side"></div>
 </main>
 <div id="toast"></div>
-<div id="start"><button class="primary">Start (turns on sound)</button></div>
+<div id="start">
+  <button class="primary">Start (turns on sound and crack listening)</button>
+</div>
 <script type="module" src="main.js"></script>

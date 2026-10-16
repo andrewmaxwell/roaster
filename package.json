@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "node server/main.js --open",
-    "sim": "node server/main.js --sim --speed 20",
+    "sim": "node server/main.js --sim --speed 5 --open",
     "stop": "node server/stop.js",
     "selftest": "node server/main.js --selftest --no-heat",
     "selftest:heat": "node server/main.js --selftest",

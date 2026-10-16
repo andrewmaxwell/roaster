@@ -17,6 +17,7 @@ export const GREEN_TEMP = 22; // °C, beans going in
 const EXO_ONSET = 188; // °C bean temp
 const DISCHARGE_TAU_S = 9; // probe settling after the beans come out
 const DISCHARGE_SETTLE_S = 30;
+const DISCHARGE_FALL_C = 20;
 
 export function step(s, u, params, dt) {
   const beans = s.Tb != null;
@@ -46,9 +47,12 @@ export function step(s, u, params, dt) {
       p.probeLoss * (s.BT - u.AT);
     // Just after a discharge the probe, no longer in the bean pile, drops
     // to the air temperature fast: on the real logs (#30, #37-39) the
-    // BT - ET gap halves about every 6 s, a 10 °C fall in 12-24 s.
+    // BT - ET gap halves about every 6 s, a 10 °C fall in 12-24 s. It falls
+    // as fast with ET at or above BT (mid-roast, or #1, #4, #17: the door's
+    // open), so it never settles toward more than DISCHARGE_FALL_C under
+    // where it was.
     if (s.settleS > 0) {
-      dBT -= (s.BT - s.ET) / DISCHARGE_TAU_S;
+      dBT -= (s.BT - Math.min(s.ET, s.settleTo)) / DISCHARGE_TAU_S;
       s.settleS -= dt;
     }
   } else {
@@ -97,6 +101,7 @@ export function discharge(s, params, u) {
   s.grams = 0;
   s.D = initialState(s.ET, s.BT, params, {...u, duty: 25}).D;
   s.settleS = DISCHARGE_SETTLE_S;
+  s.settleTo = s.BT - DISCHARGE_FALL_C;
 }
 
 // What the burner actually does: off without HS; the machine's PID in auto

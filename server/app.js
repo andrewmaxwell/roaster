@@ -28,7 +28,8 @@ import {WebSocketServer} from 'ws';
 import {Session} from './session.js';
 import {Recorder} from './recorder.js';
 import {loadProcedure, rateOfRise, PROCEDURES_DIR} from './procedure.js';
-import {findRoast, readRoast, indexAt} from './roastlog.js';
+import {findRoast, readRoast, indexAt, isRoastFile} from './roastlog.js';
+import {popsBetween} from './simPops.js';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const RESUME_WITHIN_MS = 30 * 60_000; // (a roast in progress: see session.js)
@@ -64,6 +65,7 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
     });
     recorder = new Recorder({session, dir: logsDir, beans});
     session.on('sample', (s) => broadcast({type: 'sample', sample: s}));
+    if (sim) simCracks(session);
     session.on('say', (text, o) =>
       broadcast({type: 'say', text, urgent: !!o?.urgent}),
     );
@@ -94,6 +96,25 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
     session.on('persist', save);
     session.start(saved, {downMs});
     changed();
+  }
+
+  // The simulator's crack sounds, played by the browser at the right moments
+  // (in real time: the sim may run faster).
+  function simCracks(session) {
+    let prev = null;
+    let fcBT;
+    session.on('charge', (b) => (fcBT = referenceFC(b.proc)));
+    session.on('sample', (s) => {
+      const b = session.batch;
+      const dtS = prev == null ? 0 : (s.t - prev) / 1000;
+      prev = s.t;
+      if (session.phase !== 'ROASTING' || !b?.tp || s.BT == null) return;
+      const pops = popsBetween(s.BT, dtS, fcBT).map(({kind, atS}) => ({
+        kind,
+        delayMs: Math.round((atS * 1000) / clock.speed),
+      }));
+      if (pops.length) broadcast({type: 'simPops', pops});
+    });
   }
 
   let saveTimer = null;
@@ -145,13 +166,10 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
     selectBatch: ({bean, variant, weightIn}) =>
       need().selectBatch({bean, variant, weightIn}),
     markFC: () => need().markFC(),
-    dropNow: () => need().dropNow(),
     beansOut: () => need().beansOut(),
     dismissCharge: () => need().dismissCharge(),
-    override: ({control, value}) => need().override(control, Number(value)),
-    release: ({control}) => need().release(control),
-    done: () => need().done(),
-    // Works with or without a session.
+    // Also how the day ends (between batches). Works with or without a
+    // session.
     emergencyStop: () =>
       session && session.phase !== 'OFF'
         ? session.emergencyStop()
@@ -182,7 +200,6 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
       connected: machine.connected,
       phase: s?.phase ?? 'IDLE',
       cooling: s?.cooling ?? false,
-      doneRequested: s?.doneRequested ?? false,
       pendingCharge: s?.pendingCharge ?? null,
       next: s?.next && {
         bean: s.next.bean,
@@ -205,19 +222,69 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
         steps: b.steps,
         file: b.file,
       },
-      planned: s?.planned ?? {},
-      overrides: s?.overrides ?? {},
       desired: machine.desired,
       lastBatch,
       alerts: alerts.slice(-5),
     };
   }
 
+  // ---- roast history
+
+  // Bean slug → when its latest real roast was charged (ISO). The logs are
+  // big, so each file is read once (again if it changes: notes, weight out).
+  const roastInfo = new Map(); // file → {mtimeMs, bean, at}
+  function lastRoasted() {
+    const dir = path.join(ROOT, 'logs');
+    const last = {};
+    for (const f of fs.readdirSync(dir).filter(isRoastFile)) {
+      const {mtimeMs} = fs.statSync(path.join(dir, f));
+      let info = roastInfo.get(f);
+      if (info?.mtimeMs !== mtimeMs) {
+        // One unreadable log mustn't empty the bean list.
+        try {
+          const r = readRoast(path.join(dir, f));
+          info = {mtimeMs, bean: r.bean, at: r.chargedAt ?? r.startedAt};
+        } catch {
+          info = {mtimeMs};
+        }
+        roastInfo.set(f, info);
+      }
+      if (info.at && !(info.at <= last[info.bean])) last[info.bean] = info.at;
+    }
+    return last;
+  }
+
+  // The first crack temperature of a procedure's reference roast, which the
+  // simulator's crack sounds center on (simPops.js).
+  function referenceFC(proc) {
+    const ref = proc?.reference;
+    if (!ref) return undefined;
+    try {
+      const dir = path.join(ROOT, 'logs');
+      const r = readRoast(
+        path.join(dir, findRoast(dir, ref.file ?? ref.roast)),
+      );
+      return r.fc?.BT ?? undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
   // ---- HTTP
 
   const app = express();
   app.use(express.json());
+  // The beans to choose from: those with a procedure and some left in
+  // inventory.json (all of them if there's no inventory), most recently
+  // roasted first, then the ones never roasted.
   app.get('/api/procedures', (req, res) => {
+    let stock = null;
+    try {
+      stock = readJSON(path.join(ROOT, 'inventory.json')).beans;
+    } catch {
+      // no inventory: show everything
+    }
+    const last = lastRoasted();
     const list = fs
       .readdirSync(PROCEDURES_DIR)
       .filter((f) => f.endsWith('.json'))
@@ -229,8 +296,15 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
           name: beans[bean]?.name ?? bean,
           variants: Object.keys(p.variants ?? {}),
           batchGrams: p.batchGrams ?? null,
+          lastRoasted: last[bean] ?? null,
         };
-      });
+      })
+      .filter((p) => !stock || stock[p.bean]?.batches > 0)
+      .sort(
+        (a, b) =>
+          (b.lastRoasted ?? '').localeCompare(a.lastRoasted ?? '') ||
+          a.name.localeCompare(b.name),
+      );
     res.json(list);
   });
   // A past roast's curve, relative to its charge, for the chart background.

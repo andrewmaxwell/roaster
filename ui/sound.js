@@ -68,3 +68,29 @@ export function chime(kind) {
     osc.stop(t0 + start + dur + 0.02);
   }
 }
+
+// One crack, for the simulator (server/simPops.js): a short burst of noise,
+// first crack's a louder, lower pop, second crack's a fainter, sharper snap.
+// It deliberately doesn't count as our own sound (busy()), so the microphone
+// hears it the way it would hear the beans.
+export function crack(kind) {
+  if (!ctx) return;
+  const sc = kind === 'sc';
+  const rate = ctx.sampleRate;
+  const buf = ctx.createBuffer(1, Math.ceil(rate * (sc ? 0.015 : 0.04)), rate);
+  const data = buf.getChannelData(0);
+  const decay = rate * (sc ? 0.002 : 0.006);
+  for (let i = 0; i < data.length; i++)
+    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / decay);
+  const src = new AudioBufferSourceNode(ctx, {buffer: buf});
+  const band = new BiquadFilterNode(ctx, {
+    type: 'bandpass',
+    frequency: sc ? 5000 : 2500,
+    Q: 0.7,
+  });
+  const gain = new GainNode(ctx, {
+    gain: (sc ? 0.25 : 0.7) * (0.4 + Math.random() * 0.6),
+  });
+  src.connect(band).connect(gain).connect(ctx.destination);
+  src.start();
+}

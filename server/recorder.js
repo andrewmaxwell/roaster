@@ -1,5 +1,5 @@
 // Writes each batch to logs/ as one JSON file (roastlog.js): the procedure,
-// events, steps, overrides, alerts, tasting notes, and every reading. It's
+// events, steps, alerts, tasting notes, and every reading. It's
 // rewritten every 30 s during a roast and on every event, so a crash still
 // leaves a usable log.
 //
@@ -127,7 +127,6 @@ export class Recorder {
       drop: at(b.drop),
       beansOut: at(b.beansOut),
       steps: b.steps.map(at),
-      overrides: b.overrides.map(at),
       alerts: b.alerts.map(at),
       pops: (b.pops ?? []).map(at),
       notes: b.notes ?? [],

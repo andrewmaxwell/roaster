@@ -70,3 +70,21 @@ test('a charged roast looks like a real one', async () => {
   assert.ok(tp > 95 && tp < 125, `TP ${tp}`);
   assert.ok(drop > 9 && drop < 13.5, `drop at ${drop} min`);
 });
+
+test('crack sounds come around first crack, and second crack from 206', async () => {
+  const {popRate, popsBetween} = await import('../server/simPops.js');
+  assert.equal(popRate(180, 194).fc, 0);
+  assert.ok(popRate(194, 194).fc > 0.2, 'a few pops at first');
+  assert.ok(popRate(197, 194).fc >= 1);
+  assert.equal(popRate(205, 194).fc, 0);
+  assert.equal(popRate(205, 194).sc, 0);
+  assert.ok(popRate(208, 194).sc > 1);
+  // About rate × time of them, inside the interval.
+  let n = 0;
+  for (let i = 0; i < 100; i++) {
+    const pops = popsBetween(197, 10, 194);
+    assert.ok(pops.every((p) => p.kind === 'fc' && p.atS >= 0 && p.atS < 10));
+    n += pops.length;
+  }
+  assert.ok(n > 1200 && n < 1800, `${n} pops in 1000 s at 1.5/s`);
+});

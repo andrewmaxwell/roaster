@@ -45,7 +45,6 @@ const saved = (phase) => ({
   batch: null,
   tracker: null,
   planned: {},
-  overrides: {},
   cooling: false,
   doneRequested: false,
   log: [],
@@ -121,6 +120,28 @@ test('serves the page and its scripts, and nothing else in the folder', async ()
     '/ui/../server/app.js',
   ])
     assert.equal(await status(p), 404, p);
+  await stop();
+});
+
+test('the bean list is the beans in stock, most recently roasted first', async () => {
+  const {app, stop} = start(null);
+  if (!app.server.listening)
+    await new Promise((r) => app.server.once('listening', r));
+  const base = `http://127.0.0.1:${app.server.address().port}`;
+  const list = await (await fetch(`${base}/api/procedures`)).json();
+  const stock = JSON.parse(
+    fs.readFileSync(new URL('../inventory.json', import.meta.url), 'utf8'),
+  ).beans;
+  const procs = fs
+    .readdirSync(new URL('../procedures/', import.meta.url))
+    .map((f) => f.slice(0, -5));
+  assert.deepEqual(
+    list.map((p) => p.bean).sort(),
+    procs.filter((b) => stock[b]?.batches > 0).sort(),
+  );
+  // Newest first; never-roasted beans (null) last.
+  const dates = list.map((p) => p.lastRoasted ?? '');
+  assert.deepEqual(dates, [...dates].sort().reverse());
   await stop();
 });
 
