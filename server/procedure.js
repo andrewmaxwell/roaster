@@ -29,6 +29,13 @@ const pct = (v) => v == null || (Number.isFinite(v) && v >= 0 && v <= 100);
 export const MIN_DROP_C = 190;
 export const MAX_DROP_C = 215;
 const MIN_STEP_C = 100; // under the turning point, a step would fire at once
+// The heater runs only while the roaster reports at least this much drum and
+// air (session.js): a stopped drum scorches the beans in place, and no air
+// lets the heat build. Procedures and preheat.json stay above them. (Air has
+// been 30-40% on every roast.)
+export const MIN_DRUM_PCT = 50;
+export const MIN_AIR_PCT = 20;
+const airOk = (v) => v == null || v >= MIN_AIR_PCT;
 
 export function validate(p) {
   const fail = (msg) => {
@@ -36,7 +43,8 @@ export function validate(p) {
   };
   if (!p.charge || p.charge.burner == null || !pct(p.charge.burner))
     fail('charge needs a burner %');
-  if (!pct(p.charge.air)) fail('bad charge air %');
+  if (!pct(p.charge.air) || !airOk(p.charge.air))
+    fail(`charge air must be ${MIN_AIR_PCT}-100%`);
   if (!(p.charge.sv > 0)) fail('charge needs an sv');
   if (p.charge.sv > 240) fail('charge.sv over 240 (the machine caps it there)');
   if (!(p.drop?.bt > 0)) fail('needs drop.bt');
@@ -50,6 +58,8 @@ export function validate(p) {
       fail(`step at ${s.bt} is under ${MIN_STEP_C} °C`);
     if (!(s.bt > last)) fail('steps must be in increasing bt order');
     if (!pct(s.burner) || !pct(s.air)) fail(`bad step at ${s.bt}`);
+    if (!airOk(s.air))
+      fail(`step at ${s.bt}: air under ${MIN_AIR_PCT}% keeps the heater off`);
     if (s.burner == null && s.air == null) fail(`empty step at ${s.bt}`);
     if (s.bt >= p.drop.bt) fail(`step at ${s.bt} is past the drop`);
     last = s.bt;

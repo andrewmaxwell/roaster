@@ -338,3 +338,21 @@ test('the emergency stop turns the heater off even with no BT readings', async (
   );
   assert.match(message, /BT unknown/);
 });
+
+test('the emergency stop with --all keeps cooling a hot roaster', async () => {
+  const clock = createClock(200);
+  const sim = new SimKaleido({clock, dropRate: 0});
+  Object.assign(sim.m, {TS: 230, HS: 1, AH: 0, HP: 60, FC: 40, RC: 90});
+  sim.s.BT = 180;
+  const {ok, message} = await emergencyStop({
+    all: true,
+    openTransport: () => sim.open(),
+    clock,
+  });
+  assert.ok(ok, message);
+  assert.deepEqual(
+    {HS: sim.m.HS, FC: sim.m.FC, RC: sim.m.RC, CS: sim.m.CS},
+    {HS: 0, FC: 100, RC: 90, CS: 1},
+  );
+  assert.match(message, /still hot/);
+});

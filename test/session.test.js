@@ -129,7 +129,8 @@ test('the cooling fan comes on 1 °C before the drop, while still roasting', asy
   const ctx = setup({dropRate: 0});
   const {clock, sim, session, log} = ctx;
   session.start();
-  autopilot(session, sim, clock, {batches: [ESPRESSO]});
+  // (First crack turns the fan on too: here it's never marked.)
+  autopilot(session, sim, clock, {batches: [ESPRESSO], fcAt: Infinity});
   let last = null;
   session.on('sample', (s) => (last = s));
   await clock.until(() => session.phase === 'ROASTING', 2 * HOUR, 1000);
@@ -458,6 +459,7 @@ test('a restart long after the app died mid-roast ends that roast instead of reh
   b.session.beansOut();
   await clock.advance(5000);
   assert.equal(sim.m.HS, 1);
+  await clock.advance(60_000); // the record closes a minute after beans out
   assert.ok(
     b.log.some((x) => x.e === 'batchComplete'),
     'record closed',
@@ -623,5 +625,156 @@ test('unplugging once all off is quiet; unplugging mid-cool-down is not', async 
   sim.close();
   await clock.advance(30_000);
   assert.equal(alerts().length, before, 'no alarm for the end of the day');
+  await finish(ctx);
+});
+
+// ---- faults: a reading that's wrong, a control that won't take, a gap
+
+async function roastUntil(ctx, cond) {
+  const {clock, sim, session} = ctx;
+  session.start();
+  session.selectBatch(ESPRESSO);
+  await clock.until(() => session.phase === 'READY', HOUR, 5000);
+  sim.chargeBeans(155);
+  await clock.until(cond, HOUR, 1500);
+}
+
+test('a discharge a minute after the drop starts no phantom roast', async () => {
+  const ctx = setup({dropRate: 0});
+  const {clock, sim, session, log} = ctx;
+  await roastUntil(ctx, () => log.some((x) => x.e === 'drop'));
+  session.selectBatch(ESPRESSO); // the next beans, ready to go
+  await clock.advance(65_000);
+  sim.discharge();
+  await clock.advance(3 * 60_000);
+  assert.equal(log.filter((x) => x.e === 'charge').length, 1);
+  assert.equal(session.pendingCharge, null);
+  assert.equal(session.phase, 'PREHEAT');
+  assert.ok(log.some((x) => x.e === 'batchComplete'));
+  await finish(ctx);
+});
+
+test('one probe spike is not the door opening, nor the beans coming out', async () => {
+  const ctx = setup({dropRate: 0});
+  const {clock, sim, session, log} = ctx;
+  await roastUntil(ctx, () => sim.s.BT > 170);
+  sim.probe.push(sim.s.BT + 8); // up: a fall from it looks like the door
+  await clock.advance(20_000);
+  assert.equal(session.phase, 'ROASTING');
+  assert.ok(!log.some((x) => x.e === 'drop'));
+  await clock.until(() => log.some((x) => x.e === 'drop'), HOUR, 1500);
+  sim.probe.push(sim.s.BT - 15); // down, with the beans still in
+  await clock.advance(10_000);
+  assert.ok(!log.some((x) => x.e === 'beansOut'));
+  assert.equal(sim.m.HS, 0, 'no heat with the beans in');
+  sim.discharge();
+  await clock.until(() => log.some((x) => x.e === 'beansOut'), 60_000, 1500);
+  await finish(ctx);
+});
+
+test('one cool reading does not end the cool-down; hot ones after all-off resume it', async () => {
+  const ctx = setup({dropRate: 0});
+  const {clock, sim, session, log} = ctx;
+  session.start();
+  await clock.until(() => session.phase === 'READY', HOUR, 5000);
+  session.done();
+  await clock.advance(30_000);
+  sim.probe.push(25);
+  await clock.advance(10_000);
+  assert.equal(session.phase, 'SHUTDOWN');
+  assert.equal(sim.m.FC, 100);
+  sim.probe.push(25, 25, 25); // a run of bad ones does end it...
+  await clock.until(() => session.phase === 'OFF', 60_000, 1500);
+  await clock.advance(10_000); // ...but the real, hot readings bring it back
+  assert.equal(session.phase, 'SHUTDOWN');
+  assert.ok(!said(log).some((t) => /unplug the roaster/.test(t)));
+  assert.equal(sim.m.FC, 100);
+  await finish(ctx);
+});
+
+test('too hot in preheat turns the heater off for the rest of the session', async () => {
+  const ctx = setup({dropRate: 0});
+  const {clock, sim, session, log} = ctx;
+  session.start();
+  await clock.until(() => session.phase === 'READY', HOUR, 5000);
+  sim.probe.push(206, 207, 208);
+  await clock.advance(10_000);
+  assert.equal(session.overheated, true);
+  assert.equal(sim.m.HS, 0);
+  assert.ok(log.some((x) => x.e === 'alert' && /over 205/.test(x.a.text)));
+  await clock.advance(10 * 60_000); // latched: normal readings don't undo it
+  assert.equal(sim.m.HS, 0);
+  assert.equal(session.noHeat(), 'overheated');
+  await finish(ctx);
+});
+
+test('no heat while the roaster says the drum is stopped', async () => {
+  const ctx = setup({dropRate: 0});
+  const {clock, sim, session, log} = ctx;
+  await roastUntil(ctx, () => session.batch?.tp);
+  sim.faults.ignore = ['RC'];
+  sim.m.RC = 0; // the drum stops, and won't restart
+  await clock.advance(12_000);
+  assert.equal(sim.m.HS, 0);
+  assert.ok(
+    log.some((x) => x.e === 'alert' && /Drum.*Heater off/.test(x.a.text)),
+  );
+  sim.faults.ignore = [];
+  await clock.advance(5000);
+  assert.equal(sim.m.RC, 90);
+  assert.equal(sim.m.HS, 1, 'heat again once it turns');
+  await finish(ctx);
+});
+
+test('out of touch for minutes mid-roast ends the roast instead of carrying on', async () => {
+  const ctx = setup({dropRate: 0});
+  const {clock, sim, machine, session, log} = ctx;
+  machine.on('error', () => {});
+  await roastUntil(ctx, () => session.batch?.steps.length === 2);
+  sim.unplugged = true;
+  sim.close();
+  await clock.advance(3 * 60_000);
+  Object.assign(sim.m, {TS: 0, AH: 1, FC: 0, RC: 0}); // a power cycle
+  sim.unplugged = false;
+  await clock.advance(10_000);
+  const drop = log.find((x) => x.e === 'drop').b;
+  assert.equal(drop.reason, 'interrupted');
+  assert.equal(session.phase, 'PREHEAT');
+  assert.equal(sim.m.HS, 0, 'no heat with the beans maybe still in');
+  assert.ok(
+    log.some(
+      (x) => x.e === 'alert' && /out of touch for 3 minutes/.test(x.a.text),
+    ),
+  );
+  await finish(ctx);
+});
+
+test('first crack turns the tray fan on', async () => {
+  const ctx = setup({dropRate: 0});
+  const {clock, sim, session} = ctx;
+  await roastUntil(ctx, () => session.batch?.tp);
+  assert.equal(sim.m.CS, 0);
+  session.markFC();
+  await clock.advance(3000);
+  assert.equal(sim.m.CS, 1);
+  await finish(ctx);
+});
+
+test('"all off" is said only once the roaster confirms it', async () => {
+  const ctx = setup({dropRate: 0});
+  const {clock, sim, session, log} = ctx;
+  session.start();
+  await clock.until(() => session.phase === 'READY', HOUR, 5000);
+  session.done();
+  sim.faults.ignore = ['RC']; // the drum won't stop
+  sim.s.BT = 50; // (cool already)
+  await clock.until(() => session.phase === 'OFF', HOUR, 1500);
+  await clock.advance(20_000);
+  assert.equal(session.offConfirmed, false);
+  assert.ok(!said(log).some((t) => /unplug the roaster/.test(t)));
+  sim.faults.ignore = [];
+  await clock.advance(5000);
+  assert.equal(session.offConfirmed, true);
+  assert.ok(said(log).includes('All off. You can unplug the roaster.'));
   await finish(ctx);
 });

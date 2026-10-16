@@ -3,9 +3,11 @@
 // turn the burner off short of unplugging it, and the roaster keeps heating
 // on its own if the computer goes quiet (self-test watchdog, 2026-10-04).
 //
-//   node server/stop.js         heater off; air and drum keep running
-//                                      (if it's hot) so the machine cools
-//   node server/stop.js --all   everything off (once it's cool)
+//   node server/stop.js         heater off; air, drum and the tray's
+//                               cooling fan keep running (if it's hot) so
+//                               the machine and any dumped beans cool
+//   node server/stop.js --all   everything off, but only once BT is under
+//                               60 °C; while hot it does the same as above
 //
 // If the app is still running, it holds the port, and this can't connect:
 // use the app's STOP button, or quit the app (Ctrl-C twice also turns the
@@ -45,17 +47,20 @@ export async function emergencyStop({
     await until(() => machine.state.BT != null, 5000);
     const BT = machine.state.BT;
     const hot = !(BT < 60);
-    machine.set(all ? {FC: 0, RC: 0, CS: 0} : hot ? {FC: 100, RC: 90} : {});
+    // Never stop the cooling on a hot (or unknown) machine, --all or not.
+    machine.set(
+      hot ? {FC: 100, RC: 90, CS: 1} : all ? {FC: 0, RC: 0, CS: 0} : {},
+    );
     const ok = await until(() => machine.settled() && machine.state.HS === 0);
     if (!ok)
       return {
         ok,
         message: `Sent, but not all confirmed: ${JSON.stringify(machine.state)}`,
       };
-    const what = all
-      ? 'everything off'
-      : hot
-        ? 'heater off; air 100% and drum 90% running to cool'
+    const what = hot
+      ? `heater off; air 100%, drum 90% and cooling fan running to cool${all ? ' (still hot, so not everything off)' : ''}`
+      : all
+        ? 'everything off'
         : 'heater off';
     return {
       ok,
@@ -74,7 +79,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (!ok) {
     console.log('If the app is running, use its STOP button or quit it first.');
     console.log('Last resort: unplug the roaster.');
-  } else if (!all && !(BT < 60))
+  } else if (!(BT < 60))
     console.log(
       'Once BT is under 60, run with --all to turn the air and drum off.',
     );

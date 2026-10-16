@@ -28,12 +28,21 @@ import {WebSocketServer} from 'ws';
 import {Session} from './session.js';
 import {Recorder} from './recorder.js';
 import {loadProcedure, rateOfRise, PROCEDURES_DIR} from './procedure.js';
-import {findRoast, readRoast, indexAt, isRoastFile} from './roastlog.js';
+import {
+  findRoast,
+  readRoast,
+  indexAt,
+  isRoastFile,
+  roastNumber,
+} from './roastlog.js';
 import {popsBetween} from './simPops.js';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const RESUME_WITHIN_MS = 30 * 60_000; // (a roast in progress: see session.js)
 const KEEP_IDLE_MS = 30 * 60_000; // readings kept for the chart with no session
+// After a restart, the newest roast in the logs is still "the last roast"
+// (its weight out may not be in yet) if it was charged this long ago or less.
+const LAST_ROAST_WITHIN_MS = 12 * 3600_000;
 const readJSON = (p) => JSON.parse(fs.readFileSync(p, 'utf8'));
 const LOCAL_ORIGIN = /^http:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/;
 // Browsers always send an Origin; other programs on this machine may not.
@@ -47,7 +56,9 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
   let session = null;
   let recorder = null;
   let idle = []; // readings while there's no session
-  let lastBatch = null; // the most recent finished batch, for weight out
+  // The most recent finished batch, for its summary and weight out: read
+  // from its roast log (the one record of it), also after a restart.
+  let lastBatch = latestRoast();
   const alerts = [];
 
   // ---- session
@@ -75,19 +86,9 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
       alerts.splice(0, alerts.length - 20);
       broadcast({type: 'alert', alert: a});
     });
+    // (After the recorder's listener, so the log is written.)
     session.on('batchComplete', (b) => {
-      // Times are seconds since charge, for the "last roast" summary.
-      const rel = (m) => m && {s: (m.t - b.charge.t) / 1000, BT: m.BT};
-      lastBatch = {
-        number: b.number,
-        bean: b.bean,
-        beanName: beans[b.bean]?.name ?? b.bean,
-        variant: b.variant,
-        weightIn: b.weightIn,
-        weightOut: b.weightOut ?? null,
-        fc: rel(b.fc),
-        drop: rel(b.drop),
-      };
+      if (b.file) lastBatch = summary(`${b.file}.json`) ?? lastBatch;
     });
     for (const e of ['phase', 'charge', 'tp', 'step', 'fc', 'drop'])
       session.on(e, changed);
@@ -199,6 +200,10 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
       preheat: {sv: preheat.sv, ...preheat.stable},
       connected: machine.connected,
       phase: s?.phase ?? 'IDLE',
+      offConfirmed: s?.offConfirmed ?? false,
+      heatHeld: ['PREHEAT', 'READY', 'ROASTING'].includes(s?.phase)
+        ? s.noHeat()
+        : null,
       cooling: s?.cooling ?? false,
       pendingCharge: s?.pendingCharge ?? null,
       next: s?.next && {
@@ -229,6 +234,42 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
   }
 
   // ---- roast history
+
+  // A roast log as the "last roast" panel shows it (times in seconds since
+  // charge), or null if it can't be read.
+  function summary(file) {
+    try {
+      const r = readRoast(path.join(logsDir, file));
+      const at = (m) => m && {s: m.t, BT: m.BT};
+      return {
+        number: r.roast,
+        bean: r.bean,
+        beanName: r.beanName ?? beans[r.bean]?.name ?? r.bean,
+        variant: r.variant,
+        chargedAt: r.chargedAt,
+        weightIn: r.weightIn,
+        weightOut: r.weightOut ?? null,
+        fc: at(r.fc),
+        drop: at(r.drop),
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  // The newest roast in logsDir, if it's from the last LAST_ROAST_WITHIN_MS.
+  function latestRoast() {
+    let files = [];
+    try {
+      files = fs.readdirSync(logsDir).filter(isRoastFile);
+    } catch {
+      return null; // no logs yet
+    }
+    const newest = files.sort((a, b) => roastNumber(b) - roastNumber(a))[0];
+    const last = newest && summary(newest);
+    const age = Date.now() - Date.parse(last?.chargedAt);
+    return age <= LAST_ROAST_WITHIN_MS ? last : null;
+  }
 
   // Bean slug → when its latest real roast was charged (ISO). The logs are
   // big, so each file is read once (again if it changes: notes, weight out).
@@ -392,7 +433,10 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
     try {
       const {savedAt, state} = readJSON(stateFile);
       const downMs = clock.now() - savedAt;
-      if (state.phase !== 'OFF' && downMs < RESUME_WITHIN_MS) {
+      // (An OFF the roaster never confirmed isn't over: resume it, which
+      // sends everything off again.)
+      const over = state.phase === 'OFF' && state.offConfirmed;
+      if (!over && downMs < RESUME_WITHIN_MS) {
         console.log(
           `resuming the session saved ${Math.round(downMs / 1000)} s ago (${state.phase})`,
         );
@@ -421,6 +465,7 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
   return {
     server,
     getSession: () => session,
+    snapshot,
     saveNow,
   };
 }

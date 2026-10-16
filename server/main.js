@@ -273,7 +273,8 @@ async function runSelfTestCLI() {
 
 // The M1 LITE has no panel: if this process goes away with the burner on,
 // nothing turns it off. So quitting or crashing turns the heater off first
-// (air and drum keep running while it's hot). Monitor mode never touches the
+// (air, drum and the tray's cooling fan keep running while it's hot: beans
+// may be dumped into the tray at any moment). Monitor mode never touches the
 // controls, so it doesn't start now. Not covered: kill -9, power loss, the
 // laptop sleeping (see caffeinate below); for those, server/stop.js.
 async function heaterOffAndExit(code) {
@@ -285,7 +286,7 @@ async function heaterOffAndExit(code) {
     const hot = active && !(machine.state.BT < 60); // unknown BT: cool anyway
     // Locked off: the session is still running while we wait, and a step or
     // a click must not turn the heat back on.
-    machine.heaterOff(hot ? {FC: 100, RC: 90} : {});
+    machine.heaterOff(hot ? {FC: 100, RC: 90, CS: 1} : {});
     const end = Date.now() + 5000;
     while (!machine.heaterConfirmedOff() && Date.now() < end)
       await new Promise((r) => setTimeout(r, 100));
@@ -297,7 +298,7 @@ async function heaterOffAndExit(code) {
     );
     if (hot)
       log(
-        'air and drum are still running to cool; when BT is under 60: node server/stop.js --all',
+        'air, drum and cooling fan are still running; when BT is under 60: node server/stop.js --all',
       );
   }
   // The heartbeat goes only once the heater is confirmed off (or nothing
@@ -317,9 +318,7 @@ process.on('SIGINT', async () => {
     warned = true;
     log(`A session is running (${phase}). Quitting turns the heater off; the`);
     log('session is saved, and restarting within 30 min resumes it (heat and');
-    log(
-      'all). To end the day, use "Done for today" instead. Ctrl-C again to quit.',
-    );
+    log('all). To end the day, press STOP instead. Ctrl-C again to quit.');
     return;
   }
   quitting = true;

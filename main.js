@@ -172,6 +172,8 @@ function phaseName() {
   const b = state.batch;
   if (b?.drop && !b.beansOut) return 'Drop now';
   if (state.pendingCharge) return 'Choose the beans';
+  if (state.heatHeld) return 'Heater held off';
+  if (state.phase === 'OFF' && !state.offConfirmed) return 'Turning off';
   return PHASES[state.phase] ?? state.phase;
 }
 
@@ -236,6 +238,8 @@ function renderSide() {
     s.batch && [s.batch.number, s.batch.fc, s.batch.drop],
     s.batch && [s.batch.beansOut, s.batch.steps.length, s.batch.weightIn],
     s.pendingCharge,
+    s.heatHeld,
+    s.offConfirmed,
     s.lastBatch,
     s.alerts,
     procedures,
@@ -291,8 +295,23 @@ const section = (title, body, cls = '') =>
   `<section>${title ? `<h2 class="${cls}">${title}</h2>` : ''}${body}</section>`;
 const confirmClass = (key) => (confirming.has(key) ? 'confirm' : '');
 
+// Why the heater is off when the phase wants it on (session.js noHeat).
+const HELD = {
+  overheated:
+    'BT went over its limit, so the heater is off for the rest of this session. Press STOP to cool down.',
+  drum: "The roaster says the drum isn't turning, so the heater is off until it does.",
+  air: "The roaster says the air is off, so the heater is off until it's back.",
+};
+
 function statusSection() {
   const {phase, next, pendingCharge} = state;
+  const held = state.heatHeld
+    ? `<div class="alert urgent"><span class="icon">⚠</span><span>${HELD[state.heatHeld]}</span></div>`
+    : '';
+  return held + phaseStatus(phase, next, pendingCharge);
+}
+
+function phaseStatus(phase, next, pendingCharge) {
   if (pendingCharge && (phase === 'PREHEAT' || phase === 'READY'))
     return section(
       '',
@@ -302,7 +321,13 @@ function statusSection() {
   if (phase === 'IDLE' || phase === 'OFF')
     return section(
       '',
-      `${phase === 'OFF' ? '<div class="ready">All off. You can unplug the roaster.</div>' : ''}
+      `${
+        phase !== 'OFF'
+          ? ''
+          : state.offConfirmed
+            ? '<div class="ready">All off. You can unplug the roaster.</div>'
+            : '<p class="note">Turning everything off… Don\'t unplug until it says all off.</p>'
+      }
        <p class="note">Preheating takes 15–18 minutes from cold, less if the roaster is still warm.</p>
        <button class="big primary" data-act="startSession">Start preheating</button>`,
     );

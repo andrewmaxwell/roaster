@@ -142,7 +142,12 @@ export class Recorder {
   setWeightOut(roast, grams) {
     // (JSON would quietly save a NaN as null.)
     if (!(Number(grams) > 0)) throw new Error('weight out must be grams');
-    this.update(roast, (b) => (b.weightOut = Number(grams)));
+    this.update(roast, (b) => {
+      // Roasting only loses weight: more out than in is a typo.
+      if (b.weightIn && Number(grams) >= b.weightIn)
+        throw new Error(`weight out must be under the ${b.weightIn} g in`);
+      b.weightOut = Number(grams);
+    });
   }
 
   addNote(roast, text, date = new Date()) {

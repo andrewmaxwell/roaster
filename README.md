@@ -14,7 +14,7 @@ Run `npm install` once, in this folder, then double-click one of these in Finder
   - **STOP** (top right, click twice) turns the heater off now. Mid-roast it also calls for the drop. The air and drum keep running to cool. Between batches it's also how the day ends.
   - Quitting the server (Ctrl-C twice) or a crash also turns the heater off first. The session is saved, so restarting within 30 minutes resumes it, heat included. A roast resumes only if the app was off for less than 2 minutes. After longer than that, the app ends the roast and goes back to preheating, because the beans have sat without heat.
   - A separate guardian process watches the app. If the app crashes, is killed, or hangs, the guardian turns the heater off within seconds and says so out loud. The roaster itself would keep heating.
-  - If something still seems wrong, run `node server/stop.js` for heater off with the fans left running, or `--all` once the roaster is cool. The very last resort is unplugging the roaster.
+  - If something still seems wrong, run `node server/stop.js` for heater off with the fans left running, or `--all` once the roaster is cool (while it's hot, `--all` keeps the fans running anyway). The very last resort is unplugging the roaster.
   - If the app server stops mid-session, the page sounds an alarm and says so every 15 s until it's back. The heater was turned off on the way out; take any beans out.
   - While the app runs, it keeps the Mac and its screen awake with `caffeinate`, but closing the lid can still put it to sleep. Leave the lid open.
 
@@ -31,11 +31,11 @@ It runs a whole session. Once a batch is dropped, it goes straight back to prehe
 3. **"Ready for charge: Honduran MWP Decaf, 140 grams."** It says which beans it expects, so a wrong choice is heard before they go in. Pour in the beans. There's no CHARGE button: the program detects the charge from the sudden BT drop and switches to manual burner using the procedure's charge settings. If you pour beans in before choosing them, it keeps reminding you until you do; the roast then starts from when they went in. If it wasn't a charge, click **Not a charge**.
 4. **Roast.** The program applies each BT-triggered step and plays a soft chime for each one. You listen, and press **First crack** when you hear several pops close together. The microphone (on from the Start click) flashes a "pops detected?" hint, but it never marks first crack by itself. That's the only button mid-roast.
 5. **Dropping early.** Just open the door: at second crack, or any time you want the beans out. The app sees BT fall (5 °C, about 10 s after the door opens), records the drop from when it opened, and goes back to preheating.
-6. **"Drop now!"** At the drop temperature, the program switches straight back to the preheat settings and turns the cooling fan on. You open the door. The burner stays off on its own, because BT is far above the 185 °C SV. The drum stays at 90% throughout, so the beans tumble out.
+6. **"Drop now!"** The cooling fan comes on at first crack, ready for the beans. At the drop temperature, the program switches straight back to the preheat settings and turns the cooling fan on. You open the door. The burner stays off on its own, because BT is far above the 185 °C SV. The drum stays at 90% throughout, so the beans tumble out.
 7. **While the next batch preheats,** do two things (the cooling fan turns itself off 4 minutes after the beans are out):
    - enter the weight out
    - pick the next bean, which can be different, or press **STOP** if you're done for today
-8. **Done for today.** After STOP, the heater turns off, and the air and drum keep running until BT is under 60 °C (15–20 minutes from a roast). Then everything turns off, and it says "All off. You can unplug the roaster." Keep it plugged in until then: without power the fans stop with the drum still hot. If it's unplugged mid-cool-down, the app alarms and asks you to plug it back in.
+8. **Done for today.** After STOP, the heater turns off, and the air and drum keep running until BT is under 60 °C (15–20 minutes from a roast). Then everything turns off, and once the roaster confirms it, it says "All off. You can unplug the roaster." Keep it plugged in until then: without power the fans stop with the drum still hot. If it's unplugged mid-cool-down, the app alarms and asks you to plug it back in.
 
 There are no burner or air controls: the procedure decides the heat, and changes to it go into the procedure between roasts, where they're recorded and explained.
 

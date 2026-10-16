@@ -11,9 +11,12 @@ import {Machine} from '../server/machine.js';
 import {SimKaleido} from '../server/sim.js';
 import WebSocket from 'ws';
 import {startApp, allowedOrigin} from '../server/app.js';
+import {writeRoast} from '../server/roastlog.js';
 
-function start(saved) {
+function start(saved, {roasts = []} = {}) {
   const logsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'kaleido-app-'));
+  for (const r of roasts)
+    writeRoast(path.join(logsDir, `#${r.roast}_${r.bean}.json`), r);
   const clock = createVirtualClock(Date.parse('2026-10-04T12:00:00'));
   if (saved)
     fs.writeFileSync(
@@ -166,4 +169,41 @@ test('only pages from this machine may use the WebSocket', async () => {
   assert.equal(await opens('http://localhost:3100'), true);
   assert.equal(await opens('https://example.com'), false);
   await stop();
+});
+
+test('a restart keeps the last roast, so its weight out can still be entered', async () => {
+  const roast = (n, hoursAgo) => ({
+    roast: n,
+    bean: 'colombian_supremo',
+    variant: 'espresso',
+    chargedAt: new Date(Date.now() - hoursAgo * 3600_000).toISOString(),
+    weightIn: 155,
+    weightOut: null,
+    fc: {t: 420, BT: 188},
+    drop: {t: 600, BT: 207.6, reason: 'temperature'},
+    samples: {t: [0], BT: [185]},
+  });
+  const a = start(null, {roasts: [roast(41, 30), roast(42, 1)]});
+  const last = a.app.snapshot().lastBatch;
+  assert.equal(last.number, 42);
+  assert.equal(last.weightOut, null);
+  assert.deepEqual(last.drop, {s: 600, BT: 207.6});
+  await a.stop();
+  // Yesterday's isn't "the last roast" any more.
+  const b = start(null, {roasts: [roast(41, 30)]});
+  assert.equal(b.app.snapshot().lastBatch, null);
+  await b.stop();
+});
+
+test('an OFF the roaster never confirmed resumes, to turn things off again', async () => {
+  const a = start({...saved('OFF'), next: null, offConfirmed: false});
+  assert.equal(a.app.getSession()?.phase, 'OFF');
+  assert.deepEqual(
+    {FC: a.machine.desired.FC, RC: a.machine.desired.RC},
+    {FC: 0, RC: 0},
+  );
+  await a.stop();
+  const b = start({...saved('OFF'), next: null, offConfirmed: true});
+  assert.equal(b.app.getSession(), null);
+  await b.stop();
 });

@@ -21,7 +21,13 @@
 //   'off'                     shutdown finished; everything is off
 
 import {EventEmitter} from 'events';
-import {RoastTracker, preheatProgress, rateOfRise} from './procedure.js';
+import {
+  RoastTracker,
+  preheatProgress,
+  rateOfRise,
+  MIN_DRUM_PCT,
+  MIN_AIR_PCT,
+} from './procedure.js';
 
 export const SHUTDOWN = {air: 100, coolBelowC: 60};
 const KEEP_RECENT_MS = 10 * 60_000; // samples kept for stability/RoR checks
@@ -35,7 +41,10 @@ const UNCHOSEN_REPEAT_MS = 30_000; // beans charged with none chosen
 // that "out" would turn the heat on with the beans inside.
 const BEANS_OUT_FALL = 10;
 const BEANS_OUT_MS = 30_000;
-const RECORD_AFTER_DROP_MS = 60_000; // after the drop, once the beans are out
+// The record closes this long after the beans are out (not after the drop:
+// a late discharge, a minute after the drop, closed it at once, and the
+// next preheat took the discharge's fall for a charge).
+const RECORD_AFTER_OUT_MS = 60_000;
 // The door opened mid-roast: BT this far under its peak of the last
 // windowMs, on `confirm` readings in a row, after TP. That's how the person
 // drops early (there's no button). Between TP and the drop of all 39 real
@@ -53,13 +62,26 @@ const COOL_AFTER_OUT_MS = 4 * 60_000;
 // that, such as a batch resumed with an older procedure. Second crack starts
 // at 202-207 °C on this probe.
 export const MAX_BT_C = 218;
+// Preheat's limit, over its setpoint, checked once the last batch's record
+// is closed. The app's preheats (SV 185) have never passed 192 °C, nor an
+// empty drum after a drop 187.
+const PREHEAT_OVER_SV_C = 20;
+// Readings in a row that count, for anything that changes the heat or ends
+// a phase (one bad reading mustn't), as for the procedure's triggers.
+const CONFIRM = 3;
+// Heat only with the drum turning and air moving, as the roaster reports
+// them (MIN_DRUM_PCT, MIN_AIR_PCT in procedure.js).
+// After "all off", BT this high (on CONFIRM readings) means the cool readings
+// that ended the cool-down were wrong: cool again.
+const OFF_REVERT_C = 100;
 // A batch this far off the procedure's batchGrams roasts differently.
 const WEIGHT_TOLERANCE = 0.05;
 const STALL = {windowMs: 60_000, belowCPerMin: 1, repeatMs: 120_000};
 const LONG_ROAST_MS = 16 * 60_000;
-// A roast resumes after a restart only if the app was down less than this.
-// Longer, and the beans have sat without heat (or are already out), so
-// carrying on with the procedure would be roasting something else.
+// A roast resumes after a restart, or after the roaster was out of touch
+// (cable, power, no readings), only if that lasted less than this. Longer,
+// and the beans have sat without heat (or are already out), so carrying on
+// with the procedure would be roasting something else.
 const RESUME_ROAST_WITHIN_MS = 2 * 60_000;
 // A charge is a sudden BT fall from the temperature before it. In preheat
 // (beans can go in before "ready": 3 of the 12 real roasts before #38 did)
@@ -107,6 +129,8 @@ export class Session extends EventEmitter {
     this.planned = {}; // procedure's current burner/air during a roast
     this.cooling = false;
     this.coolUntil = null; // when the cooling fan turns itself off
+    this.overheated = false; // latched: no heat for the rest of the session
+    this.offConfirmed = false; // OFF, and the roaster has said so
     this.doneRequested = false;
     this.recent = []; // last few minutes of samples
     this.log = []; // samples since the last batch was finalized
@@ -165,13 +189,14 @@ export class Session extends EventEmitter {
       case 'READY': {
         // Heater off until the dropped beans are out: an early drop (BT
         // under the preheat SV) would otherwise have the PID heat them.
-        const HS = this.batch?.drop && !this.batch.beansOut ? 0 : 1;
+        const out = this.batch?.drop && !this.batch.beansOut;
+        const HS = out || this.noHeat() ? 0 : 1;
         return {TS: p.sv, HS, AH: 1, FC: p.air, RC: p.drum, CS};
       }
       case 'ROASTING':
         return {
           TS: this.batch.proc.charge.sv,
-          HS: 1,
+          HS: this.noHeat() ? 0 : 1,
           AH: 0,
           HP: this.planned.HP,
           FC: this.planned.FC,
@@ -189,6 +214,19 @@ export class Session extends EventEmitter {
 
   apply() {
     this.machine.set(this.desiredState());
+  }
+
+  // Why the heater must stay off whatever the phase wants, or null:
+  // an over-temperature (latched), or the roaster reporting the drum or air
+  // stopped (only while it does). Nothing reported yet holds nothing: the
+  // machine holds the heat off itself until a connection's first reading,
+  // which reports RC and FC too (a power cycle reports both 0).
+  noHeat() {
+    if (this.overheated) return 'overheated';
+    const {RC, FC} = this.machine.state;
+    if (RC != null && RC < MIN_DRUM_PCT) return 'drum';
+    if (FC != null && FC < MIN_AIR_PCT) return 'air';
+    return null;
   }
 
   // ---- user actions
@@ -239,6 +277,10 @@ export class Session extends EventEmitter {
     b.fc = this.mark();
     this.machine.event(4);
     this.chime('event');
+    // From first crack the person may open the door at any moment (that's
+    // the drop), so the tray should already be cooling.
+    this.cooling = true;
+    this.apply();
     this.emit('fc', b, b.fc);
     this.emit('persist');
   }
@@ -254,6 +296,7 @@ export class Session extends EventEmitter {
     const b = this.batch;
     if (!b?.drop || b.beansOut) return;
     b.beansOut = this.mark();
+    this.lastOutAt = b.beansOut.t;
     this.coolUntil = b.beansOut.t + COOL_AFTER_OUT_MS;
     this.apply(); // preheat may heat now
     this.emit('beansOut', b, b.beansOut);
@@ -305,6 +348,13 @@ export class Session extends EventEmitter {
   // ---- machine events
 
   onSample(r) {
+    // Out of touch too long mid-roast (cable, power, no readings): the
+    // beans sat without heat, as after a long restart. Checked before this
+    // reading joins the log, so the roast ends where its readings stopped.
+    const gap = this.lastSampleAt == null ? 0 : r.t - this.lastSampleAt;
+    this.lastSampleAt = r.t;
+    if (this.phase === 'ROASTING' && gap > RESUME_ROAST_WITHIN_MS)
+      this.endInterruptedRoast(gap, 'the roaster was out of touch');
     const s = {
       t: r.t,
       BT: r.BT,
@@ -330,6 +380,7 @@ export class Session extends EventEmitter {
     const preheat = this.phase === 'PREHEAT' ? this.preheatStatus() : null;
     this.emit('sample', {...s, ror, phase: this.phase, roastMs, preheat});
 
+    this.checkHeatLimits(s);
     // (A sample listener can change the phase, so the status computed above
     // may not exist.)
     if (this.phase === 'PREHEAT') {
@@ -343,7 +394,7 @@ export class Session extends EventEmitter {
       this.checkCharge(s, CHARGE.fall);
     } else if (this.phase === 'ROASTING') this.checkRoast(s, ror);
     else if (this.phase === 'SHUTDOWN') this.checkShutdown(s);
-    else if (this.phase === 'OFF') this.checkOff();
+    else if (this.phase === 'OFF') this.checkOff(s);
     if (this.batch?.drop) this.checkAfterDrop(s);
     this.checkCooling(s.t);
     // (Counted separately: in OFF the log's length holds steady, and a
@@ -356,7 +407,11 @@ export class Session extends EventEmitter {
   }
 
   onStuck({control, want, got}) {
-    const text = `${NAMES[control]} isn't responding: wants ${want}, reads ${got ?? 'nothing'}.`;
+    const held =
+      (control === 'RC' || control === 'FC') && this.noHeat()
+        ? ' Heater off until it does.'
+        : '';
+    const text = `${NAMES[control]} isn't responding: wants ${want}, reads ${got ?? 'nothing'}.${held}`;
     this.alert(this.phase === 'ROASTING' ? 'urgent' : 'warn', text);
   }
 
@@ -393,6 +448,40 @@ export class Session extends EventEmitter {
 
   // ---- phase logic
 
+  // Before any phase logic: the temperature limit (latched, with a drop
+  // mid-roast), and heat following what the roaster says the drum and air
+  // are doing.
+  checkHeatLimits(s) {
+    const heating = ['PREHEAT', 'READY', 'ROASTING'].includes(this.phase);
+    const limit =
+      this.phase === 'ROASTING'
+        ? MAX_BT_C
+        : heating && !this.batch
+          ? this.preheat.sv + PREHEAT_OVER_SV_C
+          : Infinity;
+    this.overCount = s.BT >= limit ? (this.overCount ?? 0) + 1 : 0;
+    if (this.overCount >= CONFIRM && !this.overheated) {
+      this.overheated = true;
+      this.alert(
+        'urgent',
+        `BT is over ${limit} °C. Heater off for the rest of this session${this.phase === 'ROASTING' ? ': dropping now' : ''}. Press STOP to cool down.`,
+      );
+      if (this.phase === 'ROASTING') this.drop('over temperature');
+      else this.apply();
+    }
+    // Drum or air reported stopped: heat off while it lasts. (Its alert is
+    // the stuck control's; see onStuck.)
+    // (Applied on every reading, so the heat can't stay stuck on an answer
+    // from before a reconnect; setting what's already set sends nothing.)
+    if (!heating) return;
+    this.apply();
+    const why = this.noHeat();
+    if (why !== this.heatHeld) {
+      this.heatHeld = why;
+      this.emit('persist'); // (and the UI shows why)
+    }
+  }
+
   // How preheat stands (procedure.js: preheatProgress), plus anything else
   // it's waiting for. The UI shows this as is.
   preheatStatus() {
@@ -401,11 +490,18 @@ export class Session extends EventEmitter {
       this.preheat.sv,
       this.preheat.stable,
     );
-    const waitingFor = !this.machine.settled()
-      ? 'the roaster to confirm its settings'
-      : this.batch?.drop && !this.batch.beansOut
-        ? 'the beans to come out'
-        : null;
+    const held = {
+      overheated: 'STOP: the heater is off after an over-temperature',
+      drum: 'the drum to turn (heater off until it does)',
+      air: 'the air to come on (heater off until it does)',
+    }[this.noHeat()];
+    const waitingFor =
+      held ??
+      (!this.machine.settled()
+        ? 'the roaster to confirm its settings'
+        : this.batch?.drop && !this.batch.beansOut
+          ? 'the beans to come out'
+          : null);
     return {...p, waitingFor, ready: p.ready && !waitingFor};
   }
 
@@ -476,19 +572,22 @@ export class Session extends EventEmitter {
   // temperature, if one is under way: the roast clock is backdated to it.
   chargePoint(s, fall) {
     const [from, to] = CHARGE.baselineMs;
-    const base = this.recent.filter(
-      (x) => s.t - x.t <= from && s.t - x.t >= to,
+    // Nothing from before the last batch's beans came out: their fall isn't
+    // a charge.
+    const recent = this.recent.filter(
+      (x) => x.t > (this.lastOutAt ?? -Infinity),
     );
+    const base = recent.filter((x) => s.t - x.t <= from && s.t - x.t >= to);
     if (base.length < 3) return;
     const baseBT = base.reduce((a, x) => a + x.BT, 0) / base.length;
-    const falling = this.recent.slice(-CHARGE.confirm);
+    const falling = recent.slice(-CHARGE.confirm);
     if (falling.length < CHARGE.confirm) return;
     if (!falling.every((x) => x.BT <= baseBT - fall)) return;
-    let i = this.recent.length - 1;
-    while (i > 0 && this.recent[i - 1].BT < baseBT - 1) i--;
+    let i = recent.length - 1;
+    while (i > 0 && recent[i - 1].BT < baseBT - 1) i--;
     // Charge at the last reading before the fall, as if CHARGE had been
     // pressed as the beans went in (that's what Artisan would record).
-    const at = this.recent[Math.max(0, i - 1)];
+    const at = recent[Math.max(0, i - 1)];
     return {t: at.t, BT: at.BT};
   }
 
@@ -541,16 +640,6 @@ export class Session extends EventEmitter {
         return this.beansOut();
       }
     }
-    // The backstop: as many readings as a trigger needs, past any sane drop.
-    this.overCount = s.BT >= MAX_BT_C ? (this.overCount ?? 0) + 1 : 0;
-    if (this.overCount >= this.tracker.confirm) {
-      this.overCount = 0;
-      this.alert(
-        'urgent',
-        `BT is over ${MAX_BT_C} °C, past any planned drop. Dropping now.`,
-      );
-      return this.drop('over temperature');
-    }
     // Heads-up before the drop, from the current rate of rise.
     if (!this.alarms.dropWarned && b.tp && ror > 0.5) {
       const secs = ((b.proc.drop.bt - s.BT) / ror) * 60;
@@ -595,8 +684,8 @@ export class Session extends EventEmitter {
       (x) =>
         x.BT != null && s.t - x.t <= DOOR.windowMs && x.t >= this.batch.tp.t,
     );
-    if (!since.length) return null;
-    const peak = since.reduce((a, x) => (x.BT >= a.BT ? x : a));
+    const peak = steadyPeak(since);
+    if (!peak) return null;
     const last = this.recent.slice(-DOOR.confirm);
     if (last.length < DOOR.confirm) return null;
     if (!last.every((x) => x.BT != null && x.BT <= peak.BT - DOOR.fall))
@@ -649,7 +738,7 @@ export class Session extends EventEmitter {
   // Closes a roast the app was down for too long (see RESUME_ROAST_WITHIN_MS)
   // where its record stops, then preheats (or shuts down, if asked to). The
   // record closes once the beans are out, like any drop.
-  endInterruptedRoast(downMs) {
+  endInterruptedRoast(downMs, why = 'the app was off') {
     const b = this.batch;
     const last = this.log.at(-1) ?? b.charge;
     const at = {t: last.t, BT: last.BT};
@@ -663,7 +752,7 @@ export class Session extends EventEmitter {
     const mins = Math.max(1, Math.round(downMs / 60_000));
     this.alert(
       'urgent',
-      `The app was off for ${mins} minutes mid-roast, so roast #${b.number ?? ''} has ended. Take the beans out if they're still in, then press "Beans are out".`,
+      `${why[0].toUpperCase()}${why.slice(1)} for ${mins} minutes mid-roast, so roast #${b.number ?? ''} has ended. Take the beans out if they're still in, then press "Beans are out".`,
     );
     if (this.doneRequested) this.shutdown();
     else this.setPhase('PREHEAT');
@@ -678,8 +767,11 @@ export class Session extends EventEmitter {
       const since = this.recent.filter(
         (x) => x.t >= b.drop.t && s.t - x.t <= BEANS_OUT_MS && x.BT != null,
       );
-      const peak = Math.max(...since.map((x) => x.BT));
-      if (s.BT != null && s.BT <= peak - BEANS_OUT_FALL) this.beansOut();
+      const peak = steadyPeak(since)?.BT ?? -Infinity;
+      // Two readings down, like the door: one low reading isn't a discharge.
+      const last = this.recent.slice(-2);
+      if (last.length === 2 && last.every((x) => x.BT <= peak - BEANS_OUT_FALL))
+        this.beansOut();
       else if (s.t - this.alarms.drop >= DROP_REPEAT_MS) {
         this.alarms.drop = s.t;
         this.say('Drop now!', {urgent: true});
@@ -687,7 +779,7 @@ export class Session extends EventEmitter {
     }
     // The record (and with it the drop alarm) stays open until the beans are
     // actually out, however long that takes.
-    if (b.beansOut && s.t - b.drop.t >= RECORD_AFTER_DROP_MS)
+    if (b.beansOut && s.t - b.beansOut.t >= RECORD_AFTER_OUT_MS)
       this.finishBatch();
   }
 
@@ -708,20 +800,40 @@ export class Session extends EventEmitter {
     this.say('Shutting down. Cooling the machine.');
   }
 
+  // Cool until CONFIRM readings in a row are under coolBelowC: one bad
+  // reading mustn't stop the fans on a hot drum.
   checkShutdown(s) {
-    if (s.BT == null || s.BT >= SHUTDOWN.coolBelowC) return;
+    this.coolCount = s.BT < SHUTDOWN.coolBelowC ? (this.coolCount ?? 0) + 1 : 0;
+    if (this.coolCount < CONFIRM) return;
     if (this.batch) return; // let the last record finish first
     this.cooling = false;
     this.coolUntil = null;
     this.setPhase('OFF');
   }
 
-  // Only announce "off" once the roaster confirms everything is off.
-  checkOff() {
-    if (this.offAnnounced || !this.machine.settled()) return;
-    this.offAnnounced = true;
+  // Only say "off" (and "unplug") once the roaster confirms everything is
+  // off. Hot readings after all mean the cool ones were wrong: cool again.
+  checkOff(s) {
+    const hot = s.BT >= OFF_REVERT_C;
+    this.hotCount = hot ? (this.hotCount ?? 0) + 1 : 0;
+    // (And "unplug" only after as many readings agree it's cool, or a run
+    // of bad ones would say it just before the real ones take it back.)
+    this.offCount = hot ? 0 : (this.offCount ?? 0) + 1;
+    if (this.hotCount >= CONFIRM) {
+      this.hotCount = 0;
+      this.offConfirmed = false;
+      this.alert(
+        'urgent',
+        `BT reads ${s.BT.toFixed(0)} °C after all off: cooling again. Don't unplug yet.`,
+      );
+      return this.setPhase('SHUTDOWN');
+    }
+    if (this.offConfirmed || !this.machine.settled()) return;
+    if (this.offCount < CONFIRM) return;
+    this.offConfirmed = true;
     this.say('All off. You can unplug the roaster.');
     this.emit('off');
+    this.emit('persist');
   }
 
   // ---- helpers
@@ -763,6 +875,8 @@ export class Session extends EventEmitter {
       planned: this.planned,
       cooling: this.cooling,
       coolUntil: this.coolUntil,
+      overheated: this.overheated,
+      offConfirmed: this.offConfirmed,
       doneRequested: this.doneRequested,
       log: this.log,
       alarms: this.alarms,
@@ -777,6 +891,8 @@ export class Session extends EventEmitter {
       planned: saved.planned,
       cooling: saved.cooling,
       coolUntil: saved.coolUntil ?? null,
+      overheated: saved.overheated ?? false,
+      offConfirmed: saved.offConfirmed ?? false,
       doneRequested: saved.doneRequested,
       alarms: saved.alarms ?? {},
       log: saved.log,
@@ -805,4 +921,18 @@ export class Session extends EventEmitter {
     // recent window fresh.
     this.recent = [];
   }
+}
+
+// The highest BT in samples that isn't a lone spike: each reading counts as
+// the median of itself and its neighbors, so one thermocouple blip can't
+// make a fall that never happened. Returns that reading, or null.
+export function steadyPeak(samples) {
+  let best = null;
+  for (let i = 0; i < samples.length; i++) {
+    const near = samples.slice(Math.max(0, i - 1), i + 2).map((x) => x.BT);
+    const v =
+      near.length < 3 ? Math.min(...near) : near.sort((a, b) => a - b)[1];
+    if (!best || v >= best.BT) best = {t: samples[i].t, BT: v};
+  }
+  return best;
 }

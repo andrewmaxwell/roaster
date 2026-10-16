@@ -26,6 +26,7 @@ export class SimKaleido extends EventEmitter {
     this.isOpen = false;
     this.muted = false; // true = stops answering, like a hung USB adapter
     this.faults = {burner: false, ignore: []}; // burner: never lights; ignore: tags it never takes
+    this.probe = []; // BTs the next readings report instead (a faulty probe)
     this.accepted = []; // commands the machine acted on, for tests
     this.m = {TS: 0, HP: 0, FC: 0, RC: 0, AH: 0, HS: 0, CS: 0};
     this.seen = new Set(); // vars that have been set (HS/CS show up after)
@@ -113,8 +114,9 @@ export class SimKaleido extends EventEmitter {
   readings() {
     this.advance();
     const {s, m} = this;
+    const bt = this.probe.length ? this.probe.shift() : s.BT;
     const r = {
-      BT: s.BT.toFixed(1),
+      BT: bt.toFixed(1),
       ET: s.ET.toFixed(1),
       AT: this.ambient.toFixed(1),
       TS: m.TS.toFixed(1),
