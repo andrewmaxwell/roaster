@@ -24,7 +24,7 @@
       "burner": 30
     },
     {
-      "bt": 194,
+      "bt": 191,
       "burner": 25
     },
     {
@@ -57,6 +57,12 @@
       "afterRoast": 38,
       "change": "Moved the burner 35 cut from 178 to 186 (FC); everything else unchanged, including the 205.7 drop.",
       "why": "In #36 the cuts at 175 (burner 45->40, air 30->40) and 178 (40->35) landed 23 s apart, a minute before FC at 186 (6:26). About a minute later RoR crashed from ~9 to 1.7 C/min, with BT flat at 190 around 7:15-7:30 (the 190 cut landed right in that trough), then flicked back to 6-8 C/min from 8:45 to 9:45 while the burner was still coming down. That is a 7 C/min fall and a 6 C/min rebound, about twice the Colombian Supremo's usual (#37, #38: 3-4 down, 1.5-2 back up). The stall is also why development ran 3:53 (37.6%). Holding 40% until FC should carry more momentum through first crack: a smaller crash and flick, FC a little earlier, and development probably closer to 3:15-3:30 at the same drop temperature, so roast degree stays where the REALLY GOOD latte was. One change only, so the next roast shows its effect."
+    },
+    {
+      "date": "2026-10-16",
+      "afterRoast": 41,
+      "change": "Moved the burner 25 cut from 194 to 191; everything else unchanged, including the 205.7 drop.",
+      "why": "#39 (the 186 cut from the last change) softened the crash: RoR's low after FC was 4.2 C/min, against 2.4 in #36 (30 s grid from FC). The rebound stayed big: +4.7 C/min, from 4.2 at FC+30 s to 8.8 at FC+120 s (#36: +5.3), while the Colombian Supremo's is +1.6-1.7 in #38 and #40. The heater lags: on this roaster RoR starts to bend 45-75 s after a burner step. In #39 the 194 cut fired 67 s after FC, so it acted only after the rebound had peaked, and the 198 cut (15%, FC+103 s) acted after the drop. At 191 the cut would have fired at FC+38 s in #39, so it should act at about FC+90-110 s, while RoR is still climbing. Expect a smaller rebound, a lower RoR at the drop (6.5 in #39), and development a little longer at the same drop temperature (#39: 2:47, 30%). Watch that RoR doesn't sag under about 4 C/min after FC+60 s; if it does, the cut is too early. One change only, so the next roast shows its effect. The Guatemala Santa Ines procedure was copied from this one but keeps 194 until this roast says something."
     }
   ]
 }
