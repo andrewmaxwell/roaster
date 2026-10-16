@@ -8,14 +8,14 @@
 // saved state, the same call puts the roaster where it should be.
 //
 // The cooling fan (CS) is independent of the phase: it turns on 1 °C before
-// the drop and stays on until the user turns it off.
+// the drop and off COOL_AFTER_OUT_MS after the beans are out.
 //
 // Events:
 //   'phase' (phase)           'sample' (reading + ror, phase, roastMs)
 //   'say' (text, {urgent})    speak this
 //   'chime' (kind)            soft sound for an automatic change
 //   'alert' ({level, text})   show this (urgent ones are also spoken)
-//   'step', 'charge', 'tp', 'fc', 'sc', 'drop', 'beansOut'  (batch, detail)
+//   'step', 'charge', 'tp', 'fc', 'drop', 'beansOut'  (batch, detail)
 //   'batchComplete' (batch)   a minute after drop; the record is final
 //   'persist'                 state worth saving changed (see toJSON)
 //   'off'                     shutdown finished; everything is off
@@ -38,6 +38,16 @@ const BEANS_OUT_MS = 30_000;
 const RECORD_AFTER_DROP_MS = 60_000; // after the drop, once the beans are out
 const DROP_WARNING_S = 30;
 const COOL_BEFORE_DROP_C = 1; // cooling fan on this far below the drop temp
+// Cooling fan off this long after the beans are out: the tray has them at
+// room temperature well before then, so nobody has to remember to.
+const COOL_AFTER_OUT_MS = 4 * 60_000;
+// Drop no matter what at this BT. Procedures can't ask for more than
+// MAX_DROP_C (procedure.js); this is the backstop for anything that gets past
+// that, such as a batch resumed with an older procedure. Second crack starts
+// at 202-207 °C on this probe.
+export const MAX_BT_C = 218;
+// A batch this far off the procedure's batchGrams roasts differently.
+const WEIGHT_TOLERANCE = 0.05;
 const STALL = {windowMs: 60_000, belowCPerMin: 1, repeatMs: 120_000};
 const LONG_ROAST_MS = 16 * 60_000;
 // A roast resumes after a restart only if the app was down less than this.
@@ -69,10 +79,19 @@ export class Session extends EventEmitter {
   // preheat: the contents of preheat.json
   // loadProcedure(bean, variant): a resolved procedure (procedure.js)
   // nextRoastNumber(): the # for a new roast (optional)
-  constructor({machine, clock, preheat, loadProcedure, nextRoastNumber}) {
+  // beanName(slug): what to call the beans out loud (optional)
+  constructor({
+    machine,
+    clock,
+    preheat,
+    loadProcedure,
+    nextRoastNumber,
+    beanName,
+  }) {
     super();
     Object.assign(this, {machine, clock, preheat, loadProcedure});
     this.nextRoastNumber = nextRoastNumber ?? (() => null);
+    this.beanName = beanName ?? ((slug) => slug.replaceAll('_', ' '));
     this.phase = 'NEW';
     this.next = null; // {bean, variant, weightIn, proc}: the batch to charge next
     this.batch = null; // the roast in progress (until a minute after its drop)
@@ -81,6 +100,7 @@ export class Session extends EventEmitter {
     this.planned = {}; // procedure's current burner/air during a roast
     this.overrides = {}; // user's burner/air, which beat the procedure's
     this.cooling = false;
+    this.coolUntil = null; // when the cooling fan turns itself off
     this.doneRequested = false;
     this.recent = []; // last few minutes of samples
     this.log = []; // samples since the last batch was finalized
@@ -171,9 +191,20 @@ export class Session extends EventEmitter {
   selectBatch({bean, variant, weightIn}) {
     if (this.phase === 'SHUTDOWN' || this.phase === 'OFF')
       throw new Error('the session is shutting down');
+    // (A NaN here would be saved as null: the weight lost.)
+    if (!(Number(weightIn) > 0)) throw new Error('weight in must be grams');
+    weightIn = Number(weightIn);
     const proc = this.loadProcedure(bean, variant);
     this.next = {bean, variant: proc.variant, weightIn, proc};
     this.doneRequested = false;
+    // The steps and drop were worked out for one batch size; #41 was 140 g
+    // on a 155 g procedure.
+    const planned = proc.batchGrams;
+    if (planned && Math.abs(weightIn - planned) > planned * WEIGHT_TOLERANCE)
+      this.alert(
+        'warn',
+        `${weightIn} g is not the ${planned} g this procedure was made for, so it will roast faster or slower than its reference.`,
+      );
     // The beans are already in: start their roast from when they went in.
     if (this.pendingCharge && this.phase !== 'ROASTING') {
       const next = this.next;
@@ -196,16 +227,6 @@ export class Session extends EventEmitter {
     this.emit('persist');
   }
 
-  // The weight of the batch being roasted, or else of the next one.
-  setWeightIn(grams) {
-    const target = this.batch && !this.batch.drop ? this.batch : this.next;
-    if (!target) throw new Error('no batch to set the weight of');
-    // (A NaN here would be saved as null: the weight lost.)
-    if (!(Number(grams) > 0)) throw new Error('weight in must be grams');
-    target.weightIn = Number(grams);
-    this.emit('persist');
-  }
-
   markFC() {
     const b = this.roasting('mark first crack');
     if (b.fc) return;
@@ -216,16 +237,7 @@ export class Session extends EventEmitter {
     this.emit('persist');
   }
 
-  // Second crack means drop now.
-  markSC() {
-    const b = this.roasting('mark second crack');
-    if (b.sc) return;
-    b.sc = this.mark();
-    this.machine.event(6);
-    this.emit('sc', b, b.sc);
-    this.drop('second crack');
-  }
-
+  // (Second crack is a drop too: this button.)
   dropNow() {
     this.roasting('drop');
     this.drop('button');
@@ -235,13 +247,17 @@ export class Session extends EventEmitter {
     const b = this.batch;
     if (!b?.drop || b.beansOut) return;
     b.beansOut = this.mark();
+    this.coolUntil = b.beansOut.t + COOL_AFTER_OUT_MS;
     this.apply(); // preheat may heat now
     this.emit('beansOut', b, b.beansOut);
     this.emit('persist');
   }
 
-  setCooling(on) {
-    this.cooling = !!on;
+  // The cooling fan: on from just before the drop until coolUntil.
+  checkCooling(now) {
+    if (!this.cooling || this.coolUntil == null || now < this.coolUntil) return;
+    this.cooling = false;
+    this.coolUntil = null;
     this.apply();
     this.emit('persist');
   }
@@ -281,15 +297,6 @@ export class Session extends EventEmitter {
       'urgent',
       'Stopped: heater off. Air and drum keep running to cool.',
     );
-  }
-
-  // Ends the cool-down early: everything off now, at whatever temperature.
-  offNow() {
-    if (this.phase !== 'SHUTDOWN') throw new Error('not shutting down');
-    if (this.batch?.drop && !this.batch.beansOut) this.beansOut();
-    if (this.batch) this.finishBatch();
-    this.cooling = false;
-    this.setPhase('OFF');
   }
 
   // Pops the browser's microphone heard ({intensity}); stamped on arrival.
@@ -354,6 +361,7 @@ export class Session extends EventEmitter {
     else if (this.phase === 'SHUTDOWN') this.checkShutdown(s);
     else if (this.phase === 'OFF') this.checkOff();
     if (this.batch?.drop) this.checkAfterDrop(s);
+    this.checkCooling(s.t);
     // (Counted separately: in OFF the log's length holds steady, and a
     // multiple of 20 would save on every reading.)
     this.samplesSinceSave = (this.samplesSinceSave ?? 0) + 1;
@@ -370,11 +378,18 @@ export class Session extends EventEmitter {
 
   onDisconnected() {
     if (this.machine.stopped) return; // we closed it on the way out
-    const urgent = this.phase === 'ROASTING' || !!this.batch?.drop;
-    this.alert(
-      urgent ? 'urgent' : 'warn',
-      'Roaster disconnected. Reconnecting.',
-    );
+    // All off: unplugging the roaster is how the day ends.
+    if (this.phase === 'OFF') return;
+    if (this.phase === 'SHUTDOWN')
+      this.alert(
+        'urgent',
+        'Roaster disconnected while it is still cooling down. If you unplugged it, plug it back in: the fans stop without power. Unplug once it says all off.',
+      );
+    else
+      this.alert(
+        this.phase === 'ROASTING' || this.batch?.drop ? 'urgent' : 'warn',
+        'Roaster disconnected. Reconnecting.',
+      );
     // Nobody knows what the drum did while we were gone (a power cut cools
     // it), so "ready" has to be proven again from fresh readings.
     if (this.phase === 'PREHEAT' || this.phase === 'READY') {
@@ -421,7 +436,19 @@ export class Session extends EventEmitter {
     const now = this.clock.now();
     if (!force && now - (this.alarms.ready ?? 0) < READY_REPEAT_MS) return;
     this.alarms.ready = now;
-    this.say(this.next ? 'Ready for charge.' : 'Ready. Choose the next beans.');
+    this.say(
+      this.next
+        ? `Ready for charge: ${this.describe(this.next)}.`
+        : 'Ready. Choose the next beans.',
+    );
+  }
+
+  // "Honduran MWP Decaf, 140 grams": said at "ready", so a wrong choice is
+  // heard before the beans go in.
+  describe({bean, variant, weightIn}) {
+    return [this.beanName(bean), variant, weightIn && `${weightIn} grams`]
+      .filter(Boolean)
+      .join(', ');
   }
 
   // Beans going in show up as a sudden BT drop from the steady preheat
@@ -525,6 +552,16 @@ export class Session extends EventEmitter {
     if (this.phase !== 'ROASTING') return; // dropped
     const b = this.batch;
     const now = s.t;
+    // The backstop: as many readings as a trigger needs, past any sane drop.
+    this.overCount = s.BT >= MAX_BT_C ? (this.overCount ?? 0) + 1 : 0;
+    if (this.overCount >= this.tracker.confirm) {
+      this.overCount = 0;
+      this.alert(
+        'urgent',
+        `BT is over ${MAX_BT_C} °C, past any planned drop. Dropping now.`,
+      );
+      return this.drop('over temperature');
+    }
     // Heads-up before the drop, from the current rate of rise.
     if (!this.alarms.dropWarned && b.tp && ror > 0.5) {
       const secs = ((b.proc.drop.bt - s.BT) / ror) * 60;
@@ -597,6 +634,7 @@ export class Session extends EventEmitter {
     this.machine.set({HP: 0});
     this.machine.event(8);
     this.cooling = true;
+    this.coolUntil = null; // counted from when the beans are out
     this.overrides = {};
     this.say('Drop now!', {urgent: true});
     this.alarms.drop = this.clock.now();
@@ -618,6 +656,7 @@ export class Session extends EventEmitter {
     this.tracker.dropped = true;
     this.overrides = {};
     this.cooling = true;
+    this.coolUntil = null;
     this.alarms.drop = this.clock.now();
     const mins = Math.max(1, Math.round(downMs / 60_000));
     this.alert(
@@ -671,6 +710,7 @@ export class Session extends EventEmitter {
     if (s.BT == null || s.BT >= SHUTDOWN.coolBelowC) return;
     if (this.batch) return; // let the last record finish first
     this.cooling = false;
+    this.coolUntil = null;
     this.setPhase('OFF');
   }
 
@@ -678,7 +718,7 @@ export class Session extends EventEmitter {
   checkOff() {
     if (this.offAnnounced || !this.machine.settled()) return;
     this.offAnnounced = true;
-    this.say('All off.');
+    this.say('All off. You can unplug the roaster.');
     this.emit('off');
   }
 
@@ -721,6 +761,7 @@ export class Session extends EventEmitter {
       planned: this.planned,
       overrides: this.overrides,
       cooling: this.cooling,
+      coolUntil: this.coolUntil,
       doneRequested: this.doneRequested,
       log: this.log,
       alarms: this.alarms,
@@ -735,6 +776,7 @@ export class Session extends EventEmitter {
       planned: saved.planned,
       overrides: saved.overrides,
       cooling: saved.cooling,
+      coolUntil: saved.coolUntil ?? null,
       doneRequested: saved.doneRequested,
       alarms: saved.alarms ?? {},
       log: saved.log,

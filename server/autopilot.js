@@ -6,9 +6,7 @@ export function autopilot(session, sim, clock, opts) {
   const {
     batches, // [{bean, variant, weightIn}], roasted in order, then done()
     fcAt = 189, // BT at which first crack is "heard"
-    scAt = null, // BT at which second crack is "heard" (null = never)
     reactMs = 4000, // how long the person takes to do what's asked
-    coolingMs = 4 * 60_000, // cooling fan runs this long after a drop
   } = opts;
   const queue = [...batches];
   let charging = false;
@@ -28,11 +26,9 @@ export function autopilot(session, sim, clock, opts) {
     if (s.phase !== 'ROASTING') return;
     const b = session.batch;
     if (!b.fc && b.tp && s.BT >= fcAt) session.markFC();
-    else if (scAt != null && !b.sc && b.tp && s.BT >= scAt) session.markSC();
   });
   session.on('drop', () => {
     later(reactMs, () => sim.discharge());
-    later(coolingMs, () => session.setCooling(false));
     later(reactMs * 2, () => {
       if (queue.length) session.selectBatch(queue.shift());
       else session.done();

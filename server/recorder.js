@@ -30,7 +30,7 @@ export class Recorder {
     fs.mkdirSync(dir, {recursive: true});
     const write = (b) => this.write(b);
     session.on('charge', (b) => this.begin(b));
-    for (const e of ['tp', 'step', 'fc', 'sc', 'drop', 'beansOut'])
+    for (const e of ['tp', 'step', 'fc', 'drop', 'beansOut'])
       session.on(e, write);
     session.on('batchComplete', write);
     session.on('sample', (s) => {
@@ -124,7 +124,6 @@ export class Recorder {
       tp: at(b.tp),
       dry: dry ? {t: sec(dry.t), BT: dry.BT} : null,
       fc: at(b.fc),
-      sc: at(b.sc),
       drop: at(b.drop),
       beansOut: at(b.beansOut),
       steps: b.steps.map(at),

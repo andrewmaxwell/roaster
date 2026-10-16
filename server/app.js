@@ -60,6 +60,7 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
       preheat,
       loadProcedure,
       nextRoastNumber: () => recorder.nextRoastNumber(),
+      beanName: (slug) => beans[slug]?.name ?? slug,
     });
     recorder = new Recorder({session, dir: logsDir, beans});
     session.on('sample', (s) => broadcast({type: 'sample', sample: s}));
@@ -86,7 +87,7 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
         drop: rel(b.drop),
       };
     });
-    for (const e of ['phase', 'charge', 'tp', 'step', 'fc', 'sc', 'drop'])
+    for (const e of ['phase', 'charge', 'tp', 'step', 'fc', 'drop'])
       session.on(e, changed);
     session.on('beansOut', changed);
     session.on('batchComplete', changed);
@@ -142,18 +143,14 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
       newSession();
     },
     selectBatch: ({bean, variant, weightIn}) =>
-      need().selectBatch({bean, variant, weightIn: Number(weightIn) || null}),
-    setWeightIn: ({grams}) => need().setWeightIn(grams),
+      need().selectBatch({bean, variant, weightIn}),
     markFC: () => need().markFC(),
-    markSC: () => need().markSC(),
     dropNow: () => need().dropNow(),
     beansOut: () => need().beansOut(),
     dismissCharge: () => need().dismissCharge(),
-    setCooling: ({on}) => need().setCooling(on),
     override: ({control, value}) => need().override(control, Number(value)),
     release: ({control}) => need().release(control),
     done: () => need().done(),
-    offNow: () => need().offNow(),
     // Works with or without a session.
     emergencyStop: () =>
       session && session.phase !== 'OFF'
@@ -203,7 +200,6 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
         charge: b.charge,
         tp: b.tp,
         fc: b.fc,
-        sc: b.sc,
         drop: b.drop,
         beansOut: b.beansOut,
         steps: b.steps,

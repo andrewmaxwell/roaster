@@ -42,6 +42,11 @@ test('bad procedures are rejected', () => {
   );
   assert.throws(bad({steps: [{bt: 150, burner: 140}]}), /bad step/);
   assert.throws(bad({steps: [{bt: 208, burner: 10}]}), /past the drop/);
+  // Typos: 220 for 202, 15 for 150.
+  const variants = (bt) => ({variants: {espresso: {drop: {bt}}}});
+  assert.throws(bad(variants(220)), /outside 190-215/);
+  assert.throws(bad(variants(185)), /outside 190-215/);
+  assert.throws(bad({steps: [{bt: 15, burner: 45}]}), /under 100/);
   // Without one, the roast would start on whatever HP the PID left.
   assert.throws(bad({charge: {sv: 230}}), /charge needs a burner/);
 });

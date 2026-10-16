@@ -30,6 +30,8 @@ function connect() {
   ws = new WebSocket(`ws://${location.host}/ws`);
   ws.onopen = () => {
     serverUp = true;
+    clearInterval(lostAlarm);
+    lostAlarm = null;
     renderBar();
   };
   ws.onmessage = ({data}) => handle(JSON.parse(data));
@@ -37,8 +39,27 @@ function connect() {
     serverUp = false;
     lostServer = true;
     renderBar();
+    if (!lostAlarm && sessionActive()) {
+      lostSpeech();
+      lostAlarm = setInterval(lostSpeech, 15_000);
+    }
     setTimeout(connect, 1000);
   };
+}
+
+// The app server going away mid-session is silent otherwise: a crash turns
+// the heater off on the way out, and its guardian says nothing then, while
+// the beans sit in a drum with no heat. This page is the one thing left that
+// can make a sound, so it does, until the server is back.
+let lostAlarm = null;
+const sessionActive = () =>
+  ['PREHEAT', 'READY', 'ROASTING', 'SHUTDOWN'].includes(state?.phase);
+function lostSpeech() {
+  chime('alarm');
+  say(
+    'The roaster app stopped. The heater should be off. If beans are in the drum, take them out now, then start the app again.',
+    true,
+  );
 }
 
 function act(action, args = {}) {
@@ -70,7 +91,10 @@ const rerenderSide = () => renderSide();
 
 function handle(msg) {
   if (msg.type === 'state') {
+    const phase = state?.phase;
     state = msg.state;
+    if (state.phase !== phase && ['PREHEAT', 'READY'].includes(state.phase))
+      loadProcedures();
     renderAll();
   } else if (msg.type === 'history') {
     samples = withRoR(msg.samples);
@@ -203,11 +227,10 @@ function renderSide() {
     s.phase,
     s.mode,
     s.next,
-    s.batch && [s.batch.number, s.batch.fc, s.batch.sc, s.batch.drop],
+    s.batch && [s.batch.number, s.batch.fc, s.batch.drop],
     s.batch && [s.batch.beansOut, s.batch.steps.length, s.batch.weightIn],
     s.planned,
     s.overrides,
-    s.cooling,
     s.doneRequested,
     s.pendingCharge,
     s.lastBatch,
@@ -225,20 +248,17 @@ function renderSide() {
   const focused = side.contains(document.activeElement)
     ? document.activeElement.id
     : null;
-  // While roasting, the roast comes first; otherwise the beans you're about
-  // to roast come before their procedure.
-  const roasting = s.phase === 'ROASTING';
+  // While roasting: the roast and its procedure. Between batches: what to
+  // roast next (or done for today), its procedure, then the last roast.
   side.innerHTML = [
     statusSection(),
     roastSection(),
-    roasting ? stepsSection() : nextSection(),
-    roasting ? nextSection() : stepsSection(),
-    coolingSection(),
+    nextSection(),
+    stepsSection(),
     weightOutSection(),
     alertsSection(),
     simSection(),
     micSection(),
-    doneSection(),
   ]
     .filter(Boolean)
     .join('');
@@ -279,7 +299,8 @@ function statusSection() {
   if (phase === 'IDLE' || phase === 'OFF')
     return section(
       '',
-      `<p class="note">${phase === 'OFF' ? 'All off. ' : ''}Preheating takes 15–18 minutes from cold, less if the roaster is still warm.</p>
+      `${phase === 'OFF' ? '<div class="ready">All off. You can unplug the roaster.</div>' : ''}
+       <p class="note">Preheating takes 15–18 minutes from cold, less if the roaster is still warm.</p>
        <button class="big primary" data-act="startSession">Start preheating</button>`,
     );
   if (phase === 'PREHEAT')
@@ -297,10 +318,9 @@ function statusSection() {
     );
   if (phase === 'SHUTDOWN')
     return section(
-      'Shutting down',
-      `<p class="note">Heater off; air and drum run until BT is under 60 °C, then everything turns off.</p>
-       <p id="shutdownInfo"></p>
-       <button data-act="offNow" class="${confirmClass('off')}">${confirming.has('off') ? 'Click again: everything off now' : 'Turn everything off now'}</button>`,
+      'Cooling down',
+      `<p class="note">Heater off. Air and drum run until BT is under 60 °C, then everything turns off. Keep the roaster plugged in until it says all off: the fans stop without power.</p>
+       <p id="shutdownInfo"></p>`,
     );
   return '';
 }
@@ -322,29 +342,30 @@ function roastSection() {
       </span>
     </div>`;
   };
+  // One big button that's always the next thing to press: first crack, then
+  // the drop (second crack included). Before first crack, a small Drop now
+  // covers a roast that has to end early.
+  const drop = (cls) =>
+    `<button data-act="dropNow" class="${cls} ${confirmClass('drop')}">${
+      confirming.has('drop') ? 'Click again: drop now' : 'Drop now'
+    }</button>`;
   return section(
     `#${b.number ?? ''} ${esc(b.beanName)}${variant}, ${f(b.weightIn)} g`,
     `<div class="row" style="flex-direction: column; align-items: stretch">
-       <button class="big" data-act="markFC" ${b.fc ? 'disabled' : ''}>
-         ${b.fc ? `First crack at ${mmss(b.fc.t - b.charge.t)}` : 'First crack'}</button>
-       <div class="note" id="devInfo"></div>
-       <button class="big ${confirmClass('sc')}" data-act="markSC">${
-         confirming.has('sc')
-           ? 'Click again: second crack, drop now'
-           : 'Second crack (drops now)'
-       }</button>
-       <button data-act="dropNow" class="${confirmClass('drop')}">${
-         confirming.has('drop') ? 'Click again to drop now' : 'Drop now'
-       }</button>
+       ${
+         b.fc
+           ? `<p class="note">First crack at ${mmss(b.fc.t - b.charge.t)}. <span id="devInfo"></span></p>
+              ${drop('big')}
+              <p class="note">Second crack, or any time: click twice.</p>`
+           : `<button class="big" data-act="markFC">First crack</button>
+              ${drop('')}`
+       }
      </div>
      <div style="margin-top: 10px">
        ${ctrl('burner', 'HP', 'Burner')}
        ${ctrl('air', 'FC', 'Air')}
      </div>
-     <div class="row note">
-       <label>Weight in <input id="batchWeight" type="number" min="50" max="250" step="0.1" value="${b.weightIn ?? ''}"> g</label>
-       <button data-act="saveBatchWeight">Save</button>
-     </div>`,
+     ${state.doneRequested ? '<p class="note">Shutting down after this batch.</p>' : ''}`,
     'batch',
   );
 }
@@ -389,37 +410,42 @@ function stepsSection() {
   );
 }
 
+// Between batches: the next beans, or the end of the day. (Mid-roast it's
+// left out: the next beans are picked during the preheat after the drop.)
 function nextSection() {
   const {phase, next} = state;
-  if (!['PREHEAT', 'READY', 'ROASTING'].includes(phase)) return '';
-  if (next && !nextSection.editing)
+  if (phase !== 'PREHEAT' && phase !== 'READY') return '';
+  const done = `<button data-act="done" class="${confirmClass('done')}">${confirming.has('done') ? 'Click again: done for today' : 'Done for today'}</button>`;
+  if (next && !nextSection.editing) {
+    const planned = procedures.find((p) => p.bean === next.bean)?.batchGrams;
+    const off =
+      planned && Math.abs(next.weightIn - planned) > planned * 0.05
+        ? ` <span class="tag">procedure is for ${planned} g</span>`
+        : '';
     return section(
-      phase === 'ROASTING' ? 'Next batch' : 'Beans',
-      `<div class="row">${esc(beanName(next.bean))}${next.variant ? ` (${esc(next.variant)})` : ''}, ${f(next.weightIn)} g
-         <button data-act="editNext">Change</button></div>`,
+      'Next beans',
+      `<div class="row">${esc(beanName(next.bean))}${next.variant ? ` (${esc(next.variant)})` : ''}, ${f(next.weightIn)} g${off}
+         <button data-act="editNext">Change</button></div>
+       <div class="row" style="margin-top: 6px">${done}</div>`,
     );
+  }
+  // No bean chosen until someone chooses one: a default here is how #41's
+  // decaf was roasted on the Colombian Supremo procedure.
   const options = procedures
     .map((p) => `<option value="${esc(p.bean)}">${esc(p.name)}</option>`)
     .join('');
   return section(
-    phase === 'ROASTING' ? 'Next batch' : 'Beans',
+    'Next beans',
     `<div class="row">
-       <select id="bean">${options}</select>
+       <select id="bean"><option value="">Choose beans…</option>${options}</select>
        <select id="variant"></select>
      </div>
      <div class="row" style="margin-top: 6px">
        <label>Weight in <input id="weightIn" type="number" min="50" max="250" step="0.1"> g</label>
        <button class="primary" data-act="selectBatch">Set</button>
        ${next ? '<button data-act="cancelEdit">Cancel</button>' : ''}
-     </div>`,
-  );
-}
-
-function coolingSection() {
-  if (!state.cooling) return '';
-  return section(
-    'Cooling fan',
-    `<div class="row">On <button data-act="coolingOff">Turn off</button></div>`,
+     </div>
+     ${next ? '' : `<div class="row" style="margin-top: 6px"><span class="note">or</span> ${done}</div>`}`,
   );
 }
 
@@ -504,20 +530,6 @@ function micSection() {
   );
 }
 
-// Ending the day is decided between batches. Mid-roast the button is left
-// out (one less thing next to the roast controls); press it after the drop.
-// (A STOP mid-roast still means shutting down after the drop.)
-function doneSection() {
-  const {phase, doneRequested} = state;
-  if (doneRequested && phase === 'ROASTING')
-    return section('', `<p class="note">Shutting down after this batch.</p>`);
-  if (phase !== 'PREHEAT' && phase !== 'READY') return '';
-  return section(
-    '',
-    `<button data-act="done" class="${confirmClass('done')}">${confirming.has('done') ? 'Click again: done for today' : 'Done for today'}</button>`,
-  );
-}
-
 // Fill in the variant list for the chosen bean.
 function syncVariants() {
   const bean = $('bean');
@@ -533,14 +545,7 @@ function syncVariants() {
 const HANDLERS = {
   startSession: () => act('startSession'),
   markFC: () => act('markFC'),
-  markSC: () => confirmed('sc', rerenderSide) && act('markSC'),
   dropNow: () => confirmed('drop', rerenderSide) && act('dropNow'),
-  saveBatchWeight: () => {
-    const grams = Number($('batchWeight').value);
-    if (!(grams > 0)) return toast('Enter the weight in grams.');
-    act('setWeightIn', {grams});
-  },
-  coolingOff: () => act('setCooling', {on: false}),
   simCharge: () => act('simCharge'),
   simDischarge: () => act('simDischarge'),
   release: (el) => act('release', {control: el.dataset.control}),
@@ -552,6 +557,7 @@ const HANDLERS = {
   },
   editNext: () => {
     nextSection.editing = true;
+    loadProcedures();
     sideKey = '';
     renderSide();
     // Start from the current choice, not the first bean in the list.
@@ -584,7 +590,6 @@ const HANDLERS = {
     if (!(grams > 0)) return toast('Enter the weight in grams.');
     act('setWeightOut', {number: Number(el.dataset.number), grams});
   },
-  offNow: () => confirmed('off', rerenderSide) && act('offNow'),
   done: () => confirmed('done', rerenderSide) && act('done'),
   dismissCharge: () =>
     confirmed('dismissCharge', rerenderSide) && act('dismissCharge'),
@@ -724,8 +729,8 @@ function renderHint() {
     if (!b.fc && last.BT > 170)
       text =
         '🔊 Pops: first crack? Press First crack if you hear several close together.';
-    else if (b.fc && !b.sc && last.BT > b.fc.BT + 8)
-      text = '🔊 Pops: second crack? Press Second crack to drop now.';
+    else if (b.fc && last.BT > b.fc.BT + 8)
+      text = '🔊 Pops: second crack? Press Drop now if you want it out.';
   }
   el.textContent = text;
   el.className = text ? 'on' : '';
@@ -783,7 +788,6 @@ function renderChart() {
     for (const s of b.steps)
       markers.push({x: rel(s), label: s.burner != null ? `${s.burner}%` : ''});
     if (b.fc) markers.push({x: rel(b.fc), label: 'FC', strong: true});
-    if (b.sc) markers.push({x: rel(b.sc), label: 'SC', strong: true});
     if (b.drop) markers.push({x: rel(b.drop), label: 'drop', strong: true});
     // Just the next step: guides for all of them crowd into each other.
     const firedIdx = new Set(b.steps.map((s) => s.index));
@@ -852,14 +856,22 @@ function syncVariantsIfFresh() {
 
 // ---- start
 
+// The beans to choose from. Fetched again whenever a batch could be chosen,
+// so a procedure added while the page was open shows up.
+function loadProcedures() {
+  fetch('/api/procedures')
+    .then((r) => r.json())
+    .then((list) => {
+      procedures = list;
+      sideKey = '';
+      if (state) renderAll();
+    })
+    .catch(() => {}); // the server's down; the banner says so
+}
+
 $('start').querySelector('button').onclick = () => {
   unlock();
   $('start').remove();
 };
-fetch('/api/procedures')
-  .then((r) => r.json())
-  .then((list) => {
-    procedures = list;
-    if (state) renderAll();
-  });
+loadProcedures();
 connect();

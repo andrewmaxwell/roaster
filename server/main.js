@@ -105,9 +105,19 @@ const status = (text) => {
   }
 };
 
-machine.on('connected', () => log('connected'));
+// The reconnect loop retries every second, so an unplugged roaster (how the
+// day ends) would print "not found" forever: say each error once per run.
+let lastError = null;
+machine.on('connected', () => {
+  lastError = null;
+  log('connected');
+});
 machine.on('disconnected', () => log('DISCONNECTED'));
-machine.on('error', (err) => log(`error: ${err.message}`));
+machine.on('error', (err) => {
+  if (err.message === lastError) return;
+  lastError = err.message;
+  log(`error: ${err.message}`);
+});
 machine.on('stuck', ({control, want, got}) =>
   log(`STUCK: ${control} should be ${want} but reads ${got}`),
 );
@@ -370,9 +380,10 @@ if (app && !SIM) {
 }
 
 // Keep the Mac awake while the app runs: a sleeping laptop can't turn the
-// burner off. (Closing the lid can still sleep it.)
+// burner off, and a dark screen hides the roast. (Closing the lid can
+// still sleep it.)
 if (app && !SIM && process.platform === 'darwin')
-  spawn('caffeinate', ['-is', '-w', String(process.pid)], {
+  spawn('caffeinate', ['-dis', '-w', String(process.pid)], {
     stdio: 'ignore',
     detached: true,
   }).unref();

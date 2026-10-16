@@ -22,6 +22,14 @@ export function resolve(proc, variantName) {
 
 const pct = (v) => v == null || (Number.isFinite(v) && v >= 0 && v <= 100);
 
+// Sane temperatures on this probe, so a typo (220 for 202) is refused when
+// the beans are chosen instead of roasting past second crack. Real drops have
+// been 202.8-208.5; second crack starts at 202-207. session.js drops at
+// MAX_BT_C whatever the procedure says.
+export const MIN_DROP_C = 190;
+export const MAX_DROP_C = 215;
+const MIN_STEP_C = 100; // under the turning point, a step would fire at once
+
 export function validate(p) {
   const fail = (msg) => {
     throw new Error(`procedure ${p.bean}/${p.variant}: ${msg}`);
@@ -32,10 +40,14 @@ export function validate(p) {
   if (!(p.charge.sv > 0)) fail('charge needs an sv');
   if (p.charge.sv > 240) fail('charge.sv over 240 (the machine caps it there)');
   if (!(p.drop?.bt > 0)) fail('needs drop.bt');
+  if (!(p.drop.bt >= MIN_DROP_C && p.drop.bt <= MAX_DROP_C))
+    fail(`drop.bt ${p.drop.bt} is outside ${MIN_DROP_C}-${MAX_DROP_C} °C`);
   if (p.charge.sv <= p.drop.bt + 5)
     fail('charge.sv must sit well above drop.bt, or it caps the burner');
   let last = -Infinity;
   for (const s of p.steps ?? []) {
+    if (!(s.bt >= MIN_STEP_C))
+      fail(`step at ${s.bt} is under ${MIN_STEP_C} °C`);
     if (!(s.bt > last)) fail('steps must be in increasing bt order');
     if (!pct(s.burner) || !pct(s.air)) fail(`bad step at ${s.bt}`);
     if (s.burner == null && s.air == null) fail(`empty step at ${s.bt}`);

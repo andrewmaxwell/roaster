@@ -32,7 +32,7 @@ function setup({dropRate = 0.15, sim, clock} = {}) {
   const machine = new Machine({clock, openTransport: () => sim.open()});
   const session = new Session({machine, clock, preheat, loadProcedure});
   const log = [];
-  for (const e of ['phase', 'say', 'alert', 'charge', 'tp', 'fc', 'sc'])
+  for (const e of ['phase', 'say', 'alert', 'charge', 'tp', 'fc'])
     session.on(e, (a, b) => log.push({e, t: clock.now(), a, b}));
   for (const e of ['step', 'drop', 'beansOut', 'batchComplete'])
     session.on(e, (a, b) => log.push({e, t: clock.now(), a, b}));
@@ -99,14 +99,11 @@ test('a two-batch session, start to all-off, with 15% of commands dropped', asyn
   await finish(ctx);
 });
 
-test('after the drop it preheats again with the cooling fan on', async () => {
+test('after the drop it preheats again with the cooling fan on, for 4 minutes', async () => {
   const ctx = setup({dropRate: 0});
   const {clock, sim, session, log} = ctx;
   session.start();
-  autopilot(session, sim, clock, {
-    batches: [ESPRESSO, ESPRESSO],
-    coolingMs: HOUR,
-  });
+  autopilot(session, sim, clock, {batches: [ESPRESSO, ESPRESSO]});
   await clock.until(() => log.some((x) => x.e === 'drop'), 2 * HOUR, 5000);
   await clock.advance(3000);
   assert.equal(session.phase, 'PREHEAT');
@@ -118,9 +115,13 @@ test('after the drop it preheats again with the cooling fan on', async () => {
     {TS: 185, AH: 1, HS: 1, FC: 30, RC: 90},
   );
   assert.equal(sim.m.CS, 1);
-  session.setCooling(false);
-  await clock.advance(5000);
-  assert.equal(sim.m.CS, 0);
+  const out = log.find((x) => x.e === 'beansOut').t;
+  await clock.until(() => sim.m.CS === 0, 10 * 60_000, 1500);
+  const offAfter = clock.now() - out;
+  assert.ok(
+    offAfter >= 4 * 60_000 && offAfter < 4 * 60_000 + 5000,
+    `${offAfter}`,
+  );
   await finish(ctx);
 });
 
@@ -128,7 +129,7 @@ test('the cooling fan comes on 1 °C before the drop, while still roasting', asy
   const ctx = setup({dropRate: 0});
   const {clock, sim, session, log} = ctx;
   session.start();
-  autopilot(session, sim, clock, {batches: [ESPRESSO], coolingMs: HOUR});
+  autopilot(session, sim, clock, {batches: [ESPRESSO]});
   let last = null;
   session.on('sample', (s) => (last = s));
   await clock.until(() => session.phase === 'ROASTING', 2 * HOUR, 1000);
@@ -296,24 +297,59 @@ test('a weight in that is not a number is refused', async () => {
   const ctx = setup();
   const {session} = ctx;
   session.start();
-  session.selectBatch(ESPRESSO);
-  assert.throws(() => session.setWeightIn('abc'), /grams/);
-  assert.throws(() => session.setWeightIn(0), /grams/);
-  assert.equal(session.next.weightIn, 155);
-  session.setWeightIn('160.5');
+  for (const weightIn of ['abc', 0, null])
+    assert.throws(() => session.selectBatch({...ESPRESSO, weightIn}), /grams/);
+  assert.equal(session.next, null);
+  session.selectBatch({...ESPRESSO, weightIn: '160.5'});
   assert.equal(session.next.weightIn, 160.5);
   await finish(ctx);
 });
 
-test('second crack drops immediately', async () => {
+test("a batch far from the procedure's weight is flagged", async () => {
   const ctx = setup();
+  const {session, log} = ctx;
+  session.start();
+  const warned = () =>
+    log.filter((x) => x.e === 'alert' && /155 g/.test(x.a.text));
+  session.selectBatch({...ESPRESSO, weightIn: 150});
+  assert.equal(warned().length, 0, 'within 5%');
+  session.selectBatch({...ESPRESSO, weightIn: 140});
+  assert.equal(warned().length, 1);
+  await finish(ctx);
+});
+
+test('"ready for charge" names the beans, so a wrong choice is heard', async () => {
+  const ctx = setup({dropRate: 0});
+  const {clock, session, log} = ctx;
+  session.start();
+  session.selectBatch({...ESPRESSO, weightIn: 140});
+  await clock.until(() => session.phase === 'READY', HOUR, 5000);
+  assert.ok(
+    said(log).includes(
+      'Ready for charge: colombian supremo, espresso, 140 grams.',
+    ),
+    said(log).join(' | '),
+  );
+  await finish(ctx);
+});
+
+test('BT past any sane drop drops, whatever the procedure says', async () => {
+  const ctx = setup({dropRate: 0});
   const {clock, sim, session, log} = ctx;
   session.start();
-  autopilot(session, sim, clock, {batches: [ESPRESSO], scAt: 200});
-  await clock.until(() => log.some((x) => x.e === 'drop'), 2 * HOUR, 5000);
+  session.selectBatch(ESPRESSO);
+  await clock.until(() => session.phase === 'READY', HOUR, 5000);
+  sim.chargeBeans(155);
+  await clock.until(() => session.batch?.tp, HOUR, 1500);
+  // A typo that got past the procedure check (an older saved batch, say).
+  session.batch.proc = {...session.batch.proc, drop: {bt: 235}};
+  session.tracker.proc = session.batch.proc;
+  session.override('burner', 100);
+  await clock.until(() => log.some((x) => x.e === 'drop'), HOUR, 1500);
   const drop = log.find((x) => x.e === 'drop').b;
-  assert.equal(drop.reason, 'second crack');
-  assert.ok(drop.BT >= 200 && drop.BT < 202);
+  assert.equal(drop.reason, 'over temperature');
+  assert.ok(drop.BT >= 218 && drop.BT < 220, `${drop.BT}`);
+  assert.equal(sim.m.HP, 0);
   await finish(ctx);
 });
 
@@ -483,25 +519,6 @@ test('the drop alarm keeps going until the beans are out', async () => {
   await finish(ctx);
 });
 
-test('the cool-down can be cut short', async () => {
-  const ctx = setup({dropRate: 0});
-  const {clock, sim, session} = ctx;
-  session.start();
-  await clock.until(() => session.phase === 'READY', HOUR, 5000);
-  session.done();
-  await clock.advance(60_000);
-  assert.equal(session.phase, 'SHUTDOWN');
-  let off = false;
-  session.on('off', () => (off = true));
-  session.offNow();
-  await clock.until(() => off, 60_000, 1500);
-  assert.deepEqual(
-    {HS: sim.m.HS, FC: sim.m.FC, RC: sim.m.RC, CS: sim.m.CS},
-    {HS: 0, FC: 0, RC: 0, CS: 0},
-  );
-  await finish(ctx);
-});
-
 test('STOP mid-roast cuts the heat, calls for the drop, and shuts down', async () => {
   const ctx = setup({dropRate: 0});
   const {clock, sim, session, log} = ctx;
@@ -544,20 +561,6 @@ test('an early drop keeps the heat off until the beans are out', async () => {
   await finish(ctx);
 });
 
-test('turning everything off with the record still open finishes it', async () => {
-  const ctx = setup({dropRate: 0});
-  const {clock, sim, session, log} = ctx;
-  session.start();
-  autopilot(session, sim, clock, {batches: [ESPRESSO]});
-  await clock.until(() => session.batch?.tp, 2 * HOUR, 1000);
-  session.emergencyStop();
-  await clock.advance(5000);
-  session.offNow();
-  assert.equal(log.filter((x) => x.e === 'batchComplete').length, 1);
-  assert.equal(session.batch, null);
-  await finish(ctx);
-});
-
 test('a closed drum cooling slowly after a drop is not "beans out"', async () => {
   const ctx = setup({dropRate: 0});
   const {clock, sim, session, log} = ctx;
@@ -584,5 +587,32 @@ test('losing the roaster while ready means proving the preheat again', async () 
   await clock.advance(10_000);
   assert.equal(session.phase, 'PREHEAT');
   await clock.until(() => session.phase === 'READY', HOUR, 5000);
+  await finish(ctx);
+});
+
+test('unplugging once all off is quiet; unplugging mid-cool-down is not', async () => {
+  const ctx = setup({dropRate: 0});
+  const {clock, sim, machine, session, log} = ctx;
+  machine.on('error', () => {}); // "not found" while unplugged (main.js logs it)
+  session.start();
+  await clock.until(() => session.phase === 'READY', HOUR, 5000);
+  session.done();
+  await clock.advance(60_000);
+  sim.unplugged = true;
+  sim.close();
+  await clock.advance(5000);
+  const alerts = () => log.filter((x) => x.e === 'alert').map((x) => x.a);
+  assert.equal(alerts().at(-1).level, 'urgent');
+  assert.match(alerts().at(-1).text, /plug it back in/);
+  sim.unplugged = false;
+  let off = false;
+  session.on('off', () => (off = true));
+  await clock.until(() => off, HOUR, 5000);
+  assert.ok(said(log).includes('All off. You can unplug the roaster.'));
+  const before = alerts().length;
+  sim.unplugged = true;
+  sim.close();
+  await clock.advance(30_000);
+  assert.equal(alerts().length, before, 'no alarm for the end of the day');
   await finish(ctx);
 });

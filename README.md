@@ -15,7 +15,8 @@ Run `npm install` once, in this folder, then:
   - Quitting the server (Ctrl-C twice) or a crash also turns the heater off first. The session is saved, so restarting within 30 minutes resumes it, heat included. A roast resumes only if the app was off for less than 2 minutes. After longer than that, the app ends the roast and goes back to preheating, because the beans have sat without heat.
   - A separate guardian process watches the app. If the app crashes, is killed, or hangs, the guardian turns the heater off within seconds and says so out loud. The roaster itself would keep heating.
   - If something still seems wrong, run `node server/stop.js` for heater off with the fans left running, or `--all` once the roaster is cool. The very last resort is unplugging the roaster.
-  - While the app runs, it keeps the Mac awake with `caffeinate`, but closing the lid can still put it to sleep. Leave the lid open.
+  - If the app server stops mid-session, the page sounds an alarm and says so every 15 s until it's back. The heater was turned off on the way out; take any beans out.
+  - While the app runs, it keeps the Mac and its screen awake with `caffeinate`, but closing the lid can still put it to sleep. Leave the lid open.
 
 ## What it does
 
@@ -25,17 +26,16 @@ It runs a whole session. Once a batch is dropped, it goes straight back to prehe
 
 ## A session
 
-1. **Start.** Pick the bean and variant, and type in the weight in from your scale. You can edit the weight until the drop. The server connects and starts preheating.
+1. **Start.** Click **Start preheating**, then pick the bean and variant and type in the weight in from your scale. Nothing is picked until you pick it. If the weight is more than 5% off the procedure's batch size, it warns you: the roast will run faster or slower than its reference.
 2. **Preheat** uses the same settings for every bean (`preheat.json`): Auto Burner ON, SV 185 °C, air 30%, drum 90%. It's ready when BT stays within about 1.5 °C of SV for about 3 minutes and ET has stopped climbing. From cold, that takes 15–18 minutes, because the drum keeps soaking up heat long after BT looks settled. Between batches it's about 5–10 minutes.
-3. **"Ready for charge."** Pour in the beans. There's no CHARGE button: the program detects the charge from the sudden BT drop and switches to manual burner using the procedure's charge settings. If you pour beans in before choosing them, it keeps reminding you until you do; the roast then starts from when they went in. If it wasn't a charge, click **Not a charge**.
+3. **"Ready for charge: Honduran MWP Decaf, 140 grams."** It says which beans it expects, so a wrong choice is heard before they go in. Pour in the beans. There's no CHARGE button: the program detects the charge from the sudden BT drop and switches to manual burner using the procedure's charge settings. If you pour beans in before choosing them, it keeps reminding you until you do; the roast then starts from when they went in. If it wasn't a charge, click **Not a charge**.
 4. **Roast.** The program applies each BT-triggered step and plays a soft chime for each one. You listen, and press **FC** when you hear several pops close together. The microphone flashes a "pops detected?" hint, but it never marks FC by itself.
-5. **Second crack.** If it starts, press **Second crack** twice (the second click confirms). That drops the batch immediately. **Drop now** works the same way.
+5. **Drop now.** After first crack, the big button becomes **Drop now** (two clicks). Press it at second crack, or any time you want the beans out. Before first crack there's a small **Drop now** for a roast that has to end early.
 6. **"Drop now!"** At the drop temperature, the program switches straight back to the preheat settings and turns the cooling fan on. You open the door. The burner stays off on its own, because BT is far above the 185 °C SV. The drum stays at 90% throughout, so the beans tumble out.
-7. **While the next batch preheats,** do three things:
-   - turn off the cooling fan when you're done with it (it stays on until you do)
+7. **While the next batch preheats,** do two things (the cooling fan turns itself off 4 minutes after the beans are out):
    - enter the weight out
    - pick the next bean, which can be different, or choose **Done for today**
-8. **Done for today.** The heater turns off, and the air, drum, and cooling fan keep running until BT is cool. Then everything turns off.
+8. **Done for today.** The heater turns off, and the air and drum keep running until BT is under 60 °C (15–20 minutes from a roast). Then everything turns off, and it says "All off. You can unplug the roaster." Keep it plugged in until then: without power the fans stop with the drum still hot. If it's unplugged mid-cool-down, the app alarms and asks you to plug it back in.
 
 You can override at any time. Touching the burner or air slider takes that control away from the procedure until you hand it back.
 
