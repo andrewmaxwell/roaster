@@ -2,25 +2,29 @@
   "bean": "mexico_esmeralda_ea_natural_decaf",
   "batchGrams": 155,
   "charge": {
-    "burner": 45,
+    "burner": 50,
     "sv": 230
   },
   "steps": [
     {
       "bt": 150,
-      "burner": 40
+      "burner": 45
     },
     {
-      "bt": 175,
-      "burner": 35,
+      "bt": 173,
+      "burner": 40,
       "air": 40
     },
     {
-      "bt": 189,
+      "bt": 185,
+      "burner": 35
+    },
+    {
+      "bt": 190,
       "burner": 30
     },
     {
-      "bt": 196,
+      "bt": 197,
       "burner": 25
     }
   ],
@@ -28,9 +32,9 @@
     "bt": 202.8
   },
   "reference": {
-    "roast": 29,
-    "fc": "6:48",
-    "drop": "9:57"
+    "roast": 35,
+    "fc": "6:45",
+    "drop": "9:44"
   },
   "notes": "Mark FC when multiple pops occur close together; hold settings. Don't increase heat to chase a brief FC dip. Decaf: FC comes early (EA decafs cracked at 178-183) and quieter than regular beans.",
   "history": [
@@ -39,6 +43,12 @@
       "afterRoast": 41,
       "change": "Initial procedure, copied from Honduran MWP Decaf (current version): charge burner 45 / SV 230; burner 40 at 150, 35 + air 40 at 175, 30 at 189, 25 at 196; drop at 202.8. The reference is #29 (Honduran MWP, the same steps); there is no roast of this bean yet.",
       "why": "Untried bean, so this starts from the most similar one with history. Burman's Decaffeinated Mexican Esmeralda EA Natural (part of the 3 lb decaf bundle; Burman Coffee order #335002 (2026-10-14), 1 lb, 3 batches): Mexican beans, decaffeinated with ethyl acetate (the 'natural' sugarcane EA process, about 97% of the caffeine removed). Crisp citrus when blonde; smooth and rich with chocolate and floral aromatics at medium; strong, slightly sweet, rich chocolate when dark. Burman says it roasts easily from light to dark: stop before second crack for a sweeter cup, go into it for a heavier, baker's chocolate cup. The listing gives no region, variety, altitude or screen size. The only EA decaf with history is Colombia Huila EA Decaf (#3, #6, #9, #14, #26, #35, no procedure): run with older Artisan settings, its later roasts cracked at 178-183 around 6:45 and dropped at 202.0-202.4 around 9:24-10:02, nearly the Honduran MWP's timing. So this uses the Honduran MWP Decaf procedure, our only decaf procedure, whose 202.8 drop made an excellent latte (#29) and a REALLY GOOD half-caf latte (#34), and keeps the drop before second crack for the sweeter cup Burman describes. #29 is the reference because it ran these steps. First guess; adjust after tasting."
+    },
+    {
+      "date": "2026-10-20",
+      "afterRoast": 41,
+      "change": "Rebased on Colombia Huila EA Decaf #35: charge burner 50 / SV 230; burner 45 at 150, 40 + air 40 at 173, 35 at 185, 30 at 190, 25 at 197 (5 points more burner than the Honduran MWP through FC). Drop stays 202.8. #35 is the reference.",
+      "why": "The Huila EA decaf is our only EA decaf with history, and its later roasts (#14, #26, #35) needed about 5 points more burner than the Honduran MWP (#29, #34) to roast on the same schedule: #35 cracked at 6:45 (182.8) and dropped at 9:44 (202.4), against #29's 6:48 and 9:57 at 45/40/35/30/25. So an EA decaf likely takes more heat, and the Honduran settings would probably bring FC late with a weaker RoR. Settings are #35's Artisan burner values minus 10 (Artisan's 5.5 is HP 45, as in the Honduran transcription), at the temperatures they fired: 150.2, 173.2, 185.1, 190.1, 197.3. The drop stays at the Honduran's 202.8 rather than the Huila's 202.0-202.4: the Huila roasts have no tasting notes, while 202.8 made the praised decaf lattes (#29, #34). The Esmeralda shares only the EA process with the Huila (it is Mexican), so watch FC: if it comes much before 6:45, step the heat back toward the Honduran's."
     }
   ]
 }
