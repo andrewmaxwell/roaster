@@ -14,6 +14,12 @@
     {"date": "2026-10-20T13:27:00-05:00", "bean": "nicaragua_acopio_suyatal", "grams": 775, "note": "Carried over from the old batch counts: 5 batches × 155 g."},
     {"date": "2026-10-20T13:27:00-05:00", "bean": "guatemala_finca_santa_ines_bourbon", "grams": 454, "note": "Carried over from the old batch counts: 3 batches, 1 lb. Untried; bought from Sweet Maria's."},
     {"date": "2026-10-20T13:27:00-05:00", "bean": "colombia_productores_de_buesaco", "grams": 454, "note": "Carried over from the old batch counts: 3 batches, 1 lb. Untried; bought from Sweet Maria's."},
-    {"date": "2026-10-20T13:27:00-05:00", "bean": "colombian_supremo", "grams": 930, "note": "Carried over from the old batch counts: 6 batches × 155 g. The count was \"about 6\"."}
+    {"date": "2026-10-20T13:27:00-05:00", "bean": "colombian_supremo", "grams": 930, "note": "Carried over from the old batch counts: 6 batches × 155 g. The count was \"about 6\"."},
+    {"date": "2026-10-20T13:42:00-05:00", "bean": "el_salvador_finca_miravalles_bourbon", "grams": 598, "note": "Weighed: two bags, 153 g + 463 g with the bags, less 9 g each: a Sweet Maria's bag is about 9 g (their unopened 1 lb bags weighed 462-463 g)."},
+    {"date": "2026-10-20T13:42:00-05:00", "bean": "colombian_supremo", "grams": 1040, "note": "Weighed: 1057 g with the bag (Burman), less 17 g, assuming one bag: a Burman bag is about 17 g (the 7 new 1 lb bags weighed 466-476 g)."},
+    {"date": "2026-10-20T13:42:00-05:00", "bean": "nicaragua_acopio_suyatal", "grams": 763, "note": "Weighed: 772 g with the bag, less 9 g: a Sweet Maria's bag is about 9 g (their unopened 1 lb bags weighed 462-463 g)."},
+    {"date": "2026-10-20T13:42:00-05:00", "bean": "espresso_monkey", "grams": 164, "note": "Weighed: 173 g with the bag, less 9 g: a Sweet Maria's bag is about 9 g (their unopened 1 lb bags weighed 462-463 g). Last batch. Both earlier batches (#24, #25) were REALLY GOOD."},
+    {"date": "2026-10-20T13:42:00-05:00", "bean": "colombia_productores_de_buesaco", "grams": 453, "note": "Weighed: 462 g with the bag, unopened, less 9 g: a Sweet Maria's bag is about 9 g (their unopened 1 lb bags weighed 462-463 g)."},
+    {"date": "2026-10-20T13:42:00-05:00", "bean": "guatemala_finca_santa_ines_bourbon", "grams": 454, "note": "Weighed: 463 g with the bag, unopened, less 9 g: a Sweet Maria's bag is about 9 g (their unopened 1 lb bags weighed 462-463 g)."}
   ]
 }
