@@ -36,6 +36,7 @@ import {
   roastNumber,
 } from './roastlog.js';
 import {popsBetween} from './simPops.js';
+import {stock, DEFAULT_BATCH_G} from './inventory.js';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const RESUME_WITHIN_MS = 30 * 60_000; // (a roast in progress: see session.js)
@@ -271,28 +272,32 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
     return age <= LAST_ROAST_WITHIN_MS ? last : null;
   }
 
-  // Bean slug → when its latest real roast was charged (ISO). The logs are
-  // big, so each file is read once (again if it changes: notes, weight out).
-  const roastInfo = new Map(); // file → {mtimeMs, bean, at}
-  function lastRoasted() {
+  // The real roasts in logs/, as {bean, at (ISO charge time), weightIn}.
+  // The logs are big, so each file is read once (again if it changes:
+  // notes, weight out).
+  const roastInfo = new Map(); // file → {mtimeMs, bean, at, weightIn}
+  function realRoasts() {
     const dir = path.join(ROOT, 'logs');
-    const last = {};
-    for (const f of fs.readdirSync(dir).filter(isRoastFile)) {
-      const {mtimeMs} = fs.statSync(path.join(dir, f));
-      let info = roastInfo.get(f);
-      if (info?.mtimeMs !== mtimeMs) {
-        // One unreadable log mustn't empty the bean list.
-        try {
-          const r = readRoast(path.join(dir, f));
-          info = {mtimeMs, bean: r.bean, at: r.chargedAt ?? r.startedAt};
-        } catch {
-          info = {mtimeMs};
+    return fs
+      .readdirSync(dir)
+      .filter(isRoastFile)
+      .map((f) => {
+        const {mtimeMs} = fs.statSync(path.join(dir, f));
+        let info = roastInfo.get(f);
+        if (info?.mtimeMs !== mtimeMs) {
+          // One unreadable log mustn't empty the bean list.
+          try {
+            const r = readRoast(path.join(dir, f));
+            const at = r.chargedAt ?? r.startedAt;
+            info = {mtimeMs, bean: r.bean, at, weightIn: r.weightIn};
+          } catch {
+            info = {mtimeMs};
+          }
+          roastInfo.set(f, info);
         }
-        roastInfo.set(f, info);
-      }
-      if (info.at && !(info.at <= last[info.bean])) last[info.bean] = info.at;
-    }
-    return last;
+        return info;
+      })
+      .filter((r) => r.at);
   }
 
   // The first crack temperature of a procedure's reference roast, which the
@@ -315,17 +320,20 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
 
   const app = express();
   app.use(express.json());
-  // The beans to choose from: those with a procedure and some left in
-  // inventory.json (all of them if there's no inventory), most recently
-  // roasted first, then the ones never roasted.
+  // The beans to choose from: those with a procedure and at least half a
+  // batch left by inventory.json and the real roasts (inventory.js), all of
+  // them if there's no inventory, most recently roasted first, then the
+  // ones never roasted.
   app.get('/api/procedures', (req, res) => {
-    let stock = null;
+    const roasts = realRoasts();
+    let left = null;
     try {
-      stock = readJSON(path.join(ROOT, 'inventory.json')).beans;
+      left = stock(readJSON(path.join(ROOT, 'inventory.json')), roasts);
     } catch {
       // no inventory: show everything
     }
-    const last = lastRoasted();
+    const last = {};
+    for (const r of roasts) if (!(r.at <= last[r.bean])) last[r.bean] = r.at;
     const list = fs
       .readdirSync(PROCEDURES_DIR)
       .filter((f) => f.endsWith('.json'))
@@ -338,9 +346,12 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
           variants: Object.keys(p.variants ?? {}),
           batchGrams: p.batchGrams ?? null,
           lastRoasted: last[bean] ?? null,
+          gramsLeft: left ? Math.round(left[bean]?.grams ?? 0) : null,
         };
       })
-      .filter((p) => !stock || stock[p.bean]?.batches > 0)
+      .filter(
+        (p) => !left || p.gramsLeft >= (p.batchGrams ?? DEFAULT_BATCH_G) / 2,
+      )
       .sort(
         (a, b) =>
           (b.lastRoasted ?? '').localeCompare(a.lastRoasted ?? '') ||

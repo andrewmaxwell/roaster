@@ -1,19 +1,19 @@
 {
-  "updated": "2026-10-20",
-  "batchGrams": 155,
-  "beans": {
-    "el_salvador_finca_miravalles_bourbon": {"batches": 4},
-    "espresso_monkey": {"batches": 1, "note": "Last batch. Both earlier batches (#24, #25) were REALLY GOOD."},
-    "nicaragua_acopio_suyatal": {"batches": 5},
-    "guatemala_finca_santa_ines_bourbon": {"batches": 3, "note": "1 lb (454 g), untried. Supplier: Sweet Maria's."},
-    "colombia_productores_de_buesaco": {"batches": 3, "note": "1 lb (454 g), untried. Supplier: Sweet Maria's."},
-    "colombian_supremo": {"batches": 6, "note": "About 6."},
-    "brazil_serra_negra_mwp_decaf": {"batches": 3, "note": "1 lb (454 g), untried. Supplier: Burman Coffee (order #335002). From the 3 lb decaf bundle."},
-    "mexico_esmeralda_ea_natural_decaf": {"batches": 3, "note": "1 lb (454 g), untried. Supplier: Burman Coffee (order #335002). From the 3 lb decaf bundle."},
-    "colombian_royal_select_mwp_decaf": {"batches": 3, "note": "1 lb (454 g), untried. Supplier: Burman Coffee (order #335002). From the 3 lb decaf bundle."},
-    "bali_blue_moon": {"batches": 3, "note": "1 lb (454 g), untried. Supplier: Burman Coffee (order #335002)."},
-    "thailand_doi_inthanon_honey": {"batches": 3, "note": "1 lb (454 g), untried. Supplier: Burman Coffee (order #335002)."},
-    "ethiopia_yirgacheffe_idedo_tigest_wako": {"batches": 3, "note": "1 lb (454 g), untried. Supplier: Burman Coffee (order #335002)."},
-    "png_carpenter_bunum_wo_peaberry": {"batches": 3, "note": "1 lb (454 g), untried. Supplier: Burman Coffee (order #335002)."}
-  }
+  "purchases": [
+    {"date": "2026-10-14", "bean": "brazil_serra_negra_mwp_decaf", "grams": 454, "supplier": "Burman Coffee", "order": "335002", "note": "3 lb decaf bundle"},
+    {"date": "2026-10-14", "bean": "mexico_esmeralda_ea_natural_decaf", "grams": 454, "supplier": "Burman Coffee", "order": "335002", "note": "3 lb decaf bundle"},
+    {"date": "2026-10-14", "bean": "colombian_royal_select_mwp_decaf", "grams": 454, "supplier": "Burman Coffee", "order": "335002", "note": "3 lb decaf bundle"},
+    {"date": "2026-10-14", "bean": "bali_blue_moon", "grams": 454, "supplier": "Burman Coffee", "order": "335002"},
+    {"date": "2026-10-14", "bean": "thailand_doi_inthanon_honey", "grams": 454, "supplier": "Burman Coffee", "order": "335002"},
+    {"date": "2026-10-14", "bean": "ethiopia_yirgacheffe_idedo_tigest_wako", "grams": 454, "supplier": "Burman Coffee", "order": "335002"},
+    {"date": "2026-10-14", "bean": "png_carpenter_bunum_wo_peaberry", "grams": 454, "supplier": "Burman Coffee", "order": "335002"}
+  ],
+  "counts": [
+    {"date": "2026-10-20T13:27:00-05:00", "bean": "el_salvador_finca_miravalles_bourbon", "grams": 620, "note": "Carried over from the old batch counts: 4 batches × 155 g."},
+    {"date": "2026-10-20T13:27:00-05:00", "bean": "espresso_monkey", "grams": 155, "note": "Carried over from the old batch counts: 1 batch × 155 g. Last batch. Both earlier batches (#24, #25) were REALLY GOOD."},
+    {"date": "2026-10-20T13:27:00-05:00", "bean": "nicaragua_acopio_suyatal", "grams": 775, "note": "Carried over from the old batch counts: 5 batches × 155 g."},
+    {"date": "2026-10-20T13:27:00-05:00", "bean": "guatemala_finca_santa_ines_bourbon", "grams": 454, "note": "Carried over from the old batch counts: 3 batches, 1 lb. Untried; bought from Sweet Maria's."},
+    {"date": "2026-10-20T13:27:00-05:00", "bean": "colombia_productores_de_buesaco", "grams": 454, "note": "Carried over from the old batch counts: 3 batches, 1 lb. Untried; bought from Sweet Maria's."},
+    {"date": "2026-10-20T13:27:00-05:00", "bean": "colombian_supremo", "grams": 930, "note": "Carried over from the old batch counts: 6 batches × 155 g. The count was \"about 6\"."}
+  ]
 }

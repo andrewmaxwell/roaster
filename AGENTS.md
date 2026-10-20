@@ -28,6 +28,7 @@ server/
   fitSim.js      fits physics.js to logs/ → simParams.json (rerun after adding logs)
   roastlog.js    the roast log format (one .json per roast): read, write, find by number
   recorder.js    numbers roasts, writes each one's log, patches weight out / notes in later
+  inventory.js   green beans left: inventory.json's purchases and counts less the real roasts
   stop.js        emergency stop for when the app is gone: emergencyStop()
   guardian.js    separate process: heater off if the app dies or hangs
   selftest.js    empty-drum hardware checks (main.js --selftest)
@@ -40,7 +41,7 @@ ui/pops.js            mic pop detector (AudioWorklet); hints only
 preheat.json          preheat settings + stability rule, shared by every bean
 procedures/<bean>.json
 beans.json            canonical bean slugs → name, supplier, old filename aliases
-inventory.json        green beans on hand, in batches, by bean slug (the agent keeps it current)
+inventory.json        green bean purchases and recounts, by bean slug (the agent records them)
 logs/                 one .json per roast (roastlog.js)
 logs-sim/             what --sim runs write (gitignored)
 selftests/            self-test reports from the real roaster
@@ -106,7 +107,7 @@ After a discharge the drum restarts at the empty-drum steady state, and for 30 s
 - **Side panel:** rebuilt only when its inputs change (`renderSide`'s key). A rebuild mid-typing keeps form values and focus by element id, so per-batch inputs get per-batch ids (`weightOut-<n>`). Numbers that change every reading update in place by id (`preheatInfo`, `devInfo`, `dropEta`).
 - **Few buttons, one per job** (the user's choice; don't add more without asking). Mid-roast: First crack only; the drop is automatic or the door. Between batches: the next beans, then the last roast's weight out (read from its log, so it survives a restart for 12 hours; a weight out at or over the weight in is refused). STOP ends anything, including the day. Drop now, Done for today, burner/air nudges (never used) and others were removed.
 - **Two clicks for anything irreversible:** STOP and "not a charge" need a second click within 3 s (`confirmed()`).
-- **The bean list** starts on "Choose beans…", and is fetched again on each preheat and on Change, so a procedure added while the page is open shows up. `/api/procedures` lists only beans with batches left in `inventory.json` (all, if it's missing), most recently roasted first (from the real `logs/`, even in the sim), then the never-roasted ones. So keep the inventory current, or a bean you have won't show.
+- **The bean list** starts on "Choose beans…", and is fetched again on each preheat and on Change, so a procedure added while the page is open shows up. `/api/procedures` lists only beans with at least half a batch left (`inventory.js`; all of them if `inventory.json` is missing), most recently roasted first (from the real `logs/`, even in the sim), then the never-roasted ones. So record purchases, or a bean you have won't show.
 - **STOP** becomes a disabled "Heater off" once the phase isn't heating and the machine reports `HS 0`. An unreported HS counts as possibly on, so with no session the server sets `HS 0` at startup.
 - **WebSocket origin:** only `localhost`, `127.0.0.1`, `[::1]`, or none (non-browser clients). Browsers let any site open a WebSocket to localhost; checking the Origin's host (not Host) also covers DNS rebinding.
 - **Not live:** if the server or roaster drops out, the readouts fade; a lost server also shows a banner, and actions toast instead of silently failing.
@@ -184,8 +185,9 @@ The user mentions drinks in passing ("a latte with 11 g of the Colombian Supremo
 
 ## Green bean inventory
 
-`inventory.json` holds the batches of each green bean left, by `beans.json` slug. The agent keeps it, and the app's bean list shows only beans with batches left, so a stale inventory hides beans the user has. A batch is about 155 g, so 1 lb is 3 batches.
+`inventory.json` records what was bought (`purchases`: date, bean slug, grams, supplier, order, note) and what was actually there when counted (`counts`: date, bean, grams, note). What's left is computed, never stored: `server/inventory.js` starts each bean at its latest count (or its first purchase), adds the purchases since, and subtracts the weight in of every real roast in `logs/` charged since (`--sim` and self-test runs write elsewhere, so they never count). `node server/inventory.js` prints it. The app's bean list shows a bean only with at least half its procedure's batch left, so a missing purchase hides beans the user has. 1 lb is 454 g, about 3 batches.
 
-- **After every real roast**, subtract one batch, set `updated`, and commit it with the roast's logs. Check `logs/` for real roasts newer than `updated` not yet counted. `--sim` and self-test runs don't count.
-- **When the user buys, runs out of, or recounts beans**, update it (new beans go in `beans.json` first). Remove a bean at 0, but say so: it may be worth reordering.
-- **When asked what to roast**, read this file, the tasting notes in `logs/`, and which beans have a procedure.
+- **Roasting needs no bookkeeping**: the roast's log is the record. Don't edit the inventory after a roast.
+- **When the user buys beans**, add a purchase per bean (new beans go in `beans.json` first), dated the order date, with the supplier, order number, and the grams of each (1 lb = 454 g; a bundle's beans are separate entries).
+- **When the user recounts or runs out**, add a count with the grams (0 when out). A count replaces everything before it, so date it with the time if a roast happened earlier that day; a bare date is the start of that day. Mention a bean that has run out: it may be worth reordering. Old entries stay; they are the history.
+- **When asked what to roast**, run `node server/inventory.js`, and read the tasting notes in `logs/` and which beans have a procedure.

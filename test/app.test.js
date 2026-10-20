@@ -12,6 +12,8 @@ import {SimKaleido} from '../server/sim.js';
 import WebSocket from 'ws';
 import {startApp, allowedOrigin} from '../server/app.js';
 import {writeRoast} from '../server/roastlog.js';
+import {stock, roastsIn} from '../server/inventory.js';
+import {fileURLToPath} from 'url';
 
 function start(saved, {roasts = []} = {}) {
   const logsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'kaleido-app-'));
@@ -132,16 +134,22 @@ test('the bean list is the beans in stock, most recently roasted first', async (
     await new Promise((r) => app.server.once('listening', r));
   const base = `http://127.0.0.1:${app.server.address().port}`;
   const list = await (await fetch(`${base}/api/procedures`)).json();
-  const stock = JSON.parse(
-    fs.readFileSync(new URL('../inventory.json', import.meta.url), 'utf8'),
-  ).beans;
+  const left = stock(
+    JSON.parse(
+      fs.readFileSync(new URL('../inventory.json', import.meta.url), 'utf8'),
+    ),
+    roastsIn(fileURLToPath(new URL('../logs/', import.meta.url))),
+  );
   const procs = fs
     .readdirSync(new URL('../procedures/', import.meta.url))
     .map((f) => f.slice(0, -5));
+  // At least half a batch left (every procedure's batch is 155 g).
   assert.deepEqual(
     list.map((p) => p.bean).sort(),
-    procs.filter((b) => stock[b]?.batches > 0).sort(),
+    procs.filter((b) => left[b]?.grams >= 155 / 2).sort(),
   );
+  for (const p of list)
+    assert.equal(p.gramsLeft, Math.round(left[p.bean].grams), p.bean);
   // Newest first; never-roasted beans (null) last.
   const dates = list.map((p) => p.lastRoasted ?? '');
   assert.deepEqual(dates, [...dates].sort().reverse());
