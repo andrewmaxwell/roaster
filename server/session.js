@@ -7,8 +7,8 @@
 // roaster matches. So after a phase change, a reconnect, or a restart from a
 // saved state, the same call puts the roaster where it should be.
 //
-// The cooling fan (CS) is independent of the phase: it turns on 1 °C before
-// the drop and off COOL_AFTER_OUT_MS after the beans are out.
+// The cooling fan (CS) is independent of the phase: it turns on 3 °C before
+// the drop (or at the drop) and off COOL_AFTER_OUT_MS after the beans are out.
 //
 // Events:
 //   'phase' (phase)           'sample' (reading + ror, phase, roastMs)
@@ -53,10 +53,15 @@ const RECORD_AFTER_OUT_MS = 60_000;
 // discharge it falls 5 °C in 7.5-22.5 s (median about 10).
 const DOOR = {fall: 5, windowMs: 30_000, confirm: 2};
 const DROP_WARNING_S = 30;
-const COOL_BEFORE_DROP_C = 1; // cooling fan on this far below the drop temp
+// Cooling fan on this far below the drop temp: 27-54 s before the drops of
+// #38-#45, and 29 s before #42's door drop at 203.8 (for 204.3). It used to
+// come on at first crack, in case the door opened, but that ran it a median
+// 2:40 before the drop; a door opened earlier than this gets it at the drop.
+const COOL_BEFORE_DROP_C = 3;
 // Cooling fan off this long after the beans are out: the tray has them at
 // room temperature well before then, so nobody has to remember to.
 const COOL_AFTER_OUT_MS = 4 * 60_000;
+const round6 = (x) => (x == null ? null : Math.round(x * 1e6) / 1e6);
 // Drop no matter what at this BT. Procedures can't ask for more than
 // MAX_DROP_C (procedure.js); this is the backstop for anything that gets past
 // that, such as a batch resumed with an older procedure. Second crack starts
@@ -134,6 +139,7 @@ export class Session extends EventEmitter {
     this.doneRequested = false;
     this.recent = []; // last few minutes of samples
     this.log = []; // samples since the last batch was finalized
+    this.mic = null; // what the microphone heard since the last reading
     this.alarms = {};
     this.onSample = this.onSample.bind(this);
     this.onStuck = this.onStuck.bind(this);
@@ -277,10 +283,6 @@ export class Session extends EventEmitter {
     b.fc = this.mark();
     this.machine.event(4);
     this.chime('event');
-    // From first crack the person may open the door at any moment (that's
-    // the drop), so the tray should already be cooling.
-    this.cooling = true;
-    this.apply();
     this.emit('fc', b, b.fc);
     this.emit('persist');
   }
@@ -336,6 +338,18 @@ export class Session extends EventEmitter {
     (b.pops ??= []).push({...this.mark(), intensity});
   }
 
+  // What the microphone heard, twice a second ({floor, peak, ours}): the
+  // background and the loudest peak, pop or not. The next reading carries
+  // the loudest peak since the last one and the latest floor (micPeak,
+  // micFloor), so the log shows what first crack sounds like to the mic.
+  // Peaks while the app itself was speaking or chiming (ours) are left out.
+  addMicLevel({floor, peak, ours} = {}) {
+    if (this.phase !== 'ROASTING' || !(floor > 0)) return;
+    const m = (this.mic ??= {floor: null, peak: null});
+    m.floor = floor;
+    if (!ours && peak >= 0) m.peak = Math.max(m.peak ?? 0, peak);
+  }
+
   // Done for the day, between batches: the autopilot's end (the person
   // presses STOP, which is the same there).
   done() {
@@ -368,6 +382,11 @@ export class Session extends EventEmitter {
       HS: r.HS,
       CS: r.CS,
     };
+    if (this.mic) {
+      s.micFloor = round6(this.mic.floor);
+      s.micPeak = round6(this.mic.peak);
+      this.mic = null;
+    }
     this.recent.push(s);
     while (this.recent.length && s.t - this.recent[0].t > KEEP_RECENT_MS)
       this.recent.shift();

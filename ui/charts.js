@@ -189,14 +189,12 @@ export function createCharts(el) {
       ...common(Math.round(h * 0.22), false),
       scales: {
         x: {time: false, range: () => xRange},
-        // 0-25 covers a roast; widen for a fast preheat or the fall
-        // after a drop rather than clipping the line.
-        y: {
-          range: (u, min, max) => [
-            Math.max(-30, Math.min(0, min ?? 0)),
-            Math.min(60, Math.max(25, max ?? 25)),
-          ],
-        },
+        // Fixed, so the same wobble always looks the same size: -5 to 25
+        // covers every real roast from 30 s after the turning point to the
+        // drop (at most 24.6, in #4; -3.1 at least, except #1's early door).
+        // A fast preheat or the fall after a drop runs off the edge. (Fitting
+        // the data swung it out to -30..60 then.)
+        y: {range: () => [-5, 25]},
       },
       series: [
         {label: 'time', value: (u, v) => (v == null ? '–' : mmss(v))},

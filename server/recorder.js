@@ -100,6 +100,10 @@ export class Recorder {
     const samples = {t: S.map((s) => sec(s.t))};
     for (const k of [...CHANNELS, 'HS', 'CS'])
       samples[k] = S.map((s) => s[k] ?? null);
+    // Only when the microphone was listening.
+    if (S.some((s) => s.micFloor != null))
+      for (const k of ['micFloor', 'micPeak'])
+        samples[k] = S.map((s) => s[k] ?? null);
     let dry = null;
     if (b.tp)
       dry = S.find(

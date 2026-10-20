@@ -14,6 +14,7 @@ class PopDetector extends AudioWorkletProcessor {
     this.floor = 0.003; // running background level (RMS)
     this.last = -1;
     this.blocks = 0;
+    this.loudest = 0; // highest peak since the last level report
   }
   process(inputs) {
     const ch = inputs[0][0];
@@ -25,6 +26,7 @@ class PopDetector extends AudioWorkletProcessor {
       sum += a * a;
     }
     const rms = Math.sqrt(sum / ch.length);
+    if (peak > this.loudest) this.loudest = peak;
     // A pop: a peak far above the background, not too soon after the last.
     // One sound rings for a while: roast #38 logged three "pops" 0.1 s apart
     // at 177 °C, a minute before first crack, enough for the hint on its own.
@@ -35,14 +37,20 @@ class PopDetector extends AudioWorkletProcessor {
       // The background adapts slowly, and never to the pops themselves.
       this.floor += (Math.max(rms, 1e-4) - this.floor) * 0.003;
     }
-    if (++this.blocks % 40 === 0) this.port.postMessage({level: this.floor});
+    // Twice a second: the background and the loudest peak since, pop or
+    // not, which the roast log keeps for tuning the thresholds above.
+    if (++this.blocks % Math.round(sampleRate / 128 / 2) === 0) {
+      this.port.postMessage({level: this.floor, peak: this.loudest});
+      this.loudest = 0;
+    }
     return true;
   }
 }
 registerProcessor('pop-detector', PopDetector);
 `;
 
-// Starts listening. onPop(intensity) for each pop, onLevel(rms) now and then.
+// Starts listening. onPop(intensity) for each pop; onLevel(rms, peak) twice a
+// second with the background and the loudest peak since the last call.
 // Returns stop().
 export async function listen({onPop, onLevel}) {
   const stream = await navigator.mediaDevices.getUserMedia({
@@ -65,7 +73,7 @@ export async function listen({onPop, onLevel}) {
   const detector = new AudioWorkletNode(ctx, 'pop-detector');
   detector.port.onmessage = ({data}) => {
     if (data.pop) onPop(Math.round(data.pop));
-    if (data.level) onLevel?.(data.level);
+    if (data.level) onLevel?.(data.level, data.peak);
   };
   source.connect(highpass).connect(detector);
   return () => {

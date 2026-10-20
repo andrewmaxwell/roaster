@@ -125,12 +125,11 @@ test('after the drop it preheats again with the cooling fan on, for 4 minutes', 
   await finish(ctx);
 });
 
-test('the cooling fan comes on 1 °C before the drop, while still roasting', async () => {
+test('the cooling fan comes on 3 °C before the drop, while still roasting', async () => {
   const ctx = setup({dropRate: 0});
   const {clock, sim, session, log} = ctx;
   session.start();
-  // (First crack turns the fan on too: here it's never marked.)
-  autopilot(session, sim, clock, {batches: [ESPRESSO], fcAt: Infinity});
+  autopilot(session, sim, clock, {batches: [ESPRESSO]});
   let last = null;
   session.on('sample', (s) => (last = s));
   await clock.until(() => session.phase === 'ROASTING', 2 * HOUR, 1000);
@@ -148,10 +147,11 @@ test('the cooling fan comes on 1 °C before the drop, while still roasting', asy
   const drop = log.find((x) => x.e === 'drop');
   assert.equal(fanOn.phase, 'ROASTING');
   assert.ok(
-    fanOn.BT >= dropBT - 1.5 && fanOn.BT < dropBT,
+    fanOn.BT >= dropBT - 3.5 && fanOn.BT < dropBT - 2,
     `fan on at ${fanOn.BT}`,
   );
-  assert.ok(drop.t - fanOn.t >= 3000, 'fan on a few seconds before the drop');
+  assert.ok(drop.t - fanOn.t >= 15_000, 'fan on well before the drop');
+  assert.ok(drop.t - fanOn.t <= 90_000, 'but not minutes before');
   await finish(ctx);
 });
 
@@ -749,14 +749,42 @@ test('out of touch for minutes mid-roast ends the roast instead of carrying on',
   await finish(ctx);
 });
 
-test('first crack turns the tray fan on', async () => {
+test("first crack doesn't turn the tray fan on; an early door does", async () => {
   const ctx = setup({dropRate: 0});
   const {clock, sim, session} = ctx;
   await roastUntil(ctx, () => session.batch?.tp);
-  assert.equal(sim.m.CS, 0);
   session.markFC();
   await clock.advance(3000);
+  assert.equal(sim.m.CS, 0);
+  sim.discharge(); // the door, well before the drop temperature
+  await clock.until(() => session.batch.drop, 60_000, 500);
+  await clock.advance(3000);
+  assert.equal(session.batch.drop.reason, 'door');
   assert.equal(sim.m.CS, 1);
+  await finish(ctx);
+});
+
+test('the next reading carries what the mic heard, not our own sounds', async () => {
+  const ctx = setup({dropRate: 0});
+  const {clock, session} = ctx;
+  session.addMicLevel({floor: 0.001, peak: 0.5}); // not roasting: ignored
+  await roastUntil(ctx, () => session.batch?.tp);
+  const last = () => session.batch.samples.at(-1);
+  const n = session.batch.samples.length;
+  await clock.until(() => session.batch.samples.length > n, 10_000, 100);
+  assert.equal(last().micPeak, undefined, 'nothing heard: no columns');
+  const m = session.batch.samples.length;
+  session.addMicLevel({floor: 0.0007, peak: 0.004});
+  session.addMicLevel({floor: 0.0008, peak: 0.009});
+  session.addMicLevel({floor: 0.0008, peak: 0.3, ours: true}); // our chime
+  await clock.until(() => session.batch.samples.length > m, 10_000, 100);
+  assert.equal(last().micFloor, 0.0008);
+  assert.equal(last().micPeak, 0.009);
+  const k = session.batch.samples.length;
+  session.addMicLevel({floor: 0.0008, peak: 0.3, ours: true});
+  await clock.until(() => session.batch.samples.length > k, 10_000, 100);
+  assert.equal(last().micFloor, 0.0008);
+  assert.equal(last().micPeak, null, 'only our own sound');
   await finish(ctx);
 });
 

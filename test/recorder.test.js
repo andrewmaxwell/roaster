@@ -121,6 +121,24 @@ test('a roast is written as it happens, then finalized', async () => {
   await finish(ctx);
 });
 
+test('the mic columns are logged only when it listened', async () => {
+  const ctx = setup();
+  const {dir, clock, sim, session} = ctx;
+  autopilot(session, sim, clock, {batches: [ESPRESSO]});
+  await clock.until(() => session.batch?.tp, 2 * HOUR, 1500);
+  const file = () => path.join(dir, `${session.batch.file}.json`);
+  await clock.until(() => session.batch.fc, HOUR, 1500);
+  assert.equal(readRoast(file()).samples.micPeak, undefined);
+  session.addMicLevel({floor: 0.0007, peak: 0.02});
+  await clock.until(() => session.batch.drop, HOUR, 1500);
+  const S = readRoast(file()).samples;
+  assert.equal(S.micPeak.filter((x) => x != null).length, 1);
+  assert.equal(S.micPeak.length, S.t.length);
+  assert.ok(S.micPeak.includes(0.02) && S.micFloor.includes(0.0007));
+  await clock.until(() => session.phase === 'OFF', 3 * HOUR, 5000);
+  await finish(ctx);
+});
+
 test('weight out and tasting notes patch the log later', async () => {
   const ctx = setup();
   const {dir, clock, sim, session, recorder} = ctx;

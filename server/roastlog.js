@@ -14,8 +14,12 @@
 //   notes [{date, text}]          tasting notes
 //   source 'app' | 'artisan'      who recorded it; Artisan roasts (#1-#37)
 //                                 keep Artisan's own numbers in `artisan`
-//   samples {t, BT, ET, HP, FC, RC, TS, AT, AH, HS?, CS?}
-//                                 one column per reading, null = none
+//   samples {t, BT, ET, HP, FC, RC, TS, AT, AH, HS?, CS?, micFloor?, micPeak?}
+//                                 one column per reading, null = none;
+//                                 micFloor/micPeak (from #46, when the
+//                                 browser's mic was listening): its
+//                                 background level and the loudest peak
+//                                 since the last reading (0-1 full scale)
 //
 // #1-#37 were recorded by Artisan, #38-#41 by the app as Artisan .alog
 // files plus a sidecar; all were converted to this on 2026-10-15 (the

@@ -177,6 +177,7 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
         ? session.emergencyStop()
         : machine.set({HS: 0, AH: 0, HP: 0}),
     pop: ({intensity}) => session?.addPop(intensity),
+    micLevel: (level) => session?.addMicLevel(level),
     setWeightOut: ({number, grams}) => {
       need();
       recorder.setWeightOut(number, grams);

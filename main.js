@@ -547,9 +547,20 @@ async function startMic() {
         act('pop', {intensity});
         renderHint();
       },
-      onLevel: (level) => {
+      onLevel: (level, peak) => {
         const el = $('micInfo');
         if (el) el.textContent = `(background ${(level * 1000).toFixed(1)})`;
+        // Logged with the roast's readings, so the thresholds can be tuned
+        // against real cracks. Not act(): no toast twice a second when the
+        // server's away.
+        if (state?.phase === 'ROASTING' && ws?.readyState === WebSocket.OPEN)
+          ws.send(
+            JSON.stringify({
+              type: 'action',
+              action: 'micLevel',
+              args: {floor: level, peak, ours: busy()},
+            }),
+          );
       },
     });
     mic = {stop, pops};
