@@ -1,0 +1,44 @@
+{
+  "bean": "mexico_esmeralda_ea_natural_decaf",
+  "batchGrams": 155,
+  "charge": {
+    "burner": 45,
+    "sv": 230
+  },
+  "steps": [
+    {
+      "bt": 150,
+      "burner": 40
+    },
+    {
+      "bt": 175,
+      "burner": 35,
+      "air": 40
+    },
+    {
+      "bt": 189,
+      "burner": 30
+    },
+    {
+      "bt": 196,
+      "burner": 25
+    }
+  ],
+  "drop": {
+    "bt": 202.8
+  },
+  "reference": {
+    "roast": 29,
+    "fc": "6:48",
+    "drop": "9:57"
+  },
+  "notes": "Mark FC when multiple pops occur close together; hold settings. Don't increase heat to chase a brief FC dip. Decaf: FC comes early (EA decafs cracked at 178-183) and quieter than regular beans.",
+  "history": [
+    {
+      "date": "2026-10-20",
+      "afterRoast": 41,
+      "change": "Initial procedure, copied from Honduran MWP Decaf (current version): charge burner 45 / SV 230; burner 40 at 150, 35 + air 40 at 175, 30 at 189, 25 at 196; drop at 202.8. The reference is #29 (Honduran MWP, the same steps); there is no roast of this bean yet.",
+      "why": "Untried bean, so this starts from the most similar one with history. Burman's Decaffeinated Mexican Esmeralda EA Natural (part of the 3 lb decaf bundle; Burman Coffee order #335002 (2026-10-14), 1 lb, 3 batches): Mexican beans, decaffeinated with ethyl acetate (the 'natural' sugarcane EA process, about 97% of the caffeine removed). Crisp citrus when blonde; smooth and rich with chocolate and floral aromatics at medium; strong, slightly sweet, rich chocolate when dark. Burman says it roasts easily from light to dark: stop before second crack for a sweeter cup, go into it for a heavier, baker's chocolate cup. The listing gives no region, variety, altitude or screen size. The only EA decaf with history is Colombia Huila EA Decaf (#3, #6, #9, #14, #26, #35, no procedure): run with older Artisan settings, its later roasts cracked at 178-183 around 6:45 and dropped at 202.0-202.4 around 9:24-10:02, nearly the Honduran MWP's timing. So this uses the Honduran MWP Decaf procedure, our only decaf procedure, whose 202.8 drop made an excellent latte (#29) and a REALLY GOOD half-caf latte (#34), and keeps the drop before second crack for the sweeter cup Burman describes. #29 is the reference because it ran these steps. First guess; adjust after tasting."
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-14",
+  "updated": "2026-10-20",
   "batchGrams": 155,
   "beans": {
     "el_salvador_finca_miravalles_bourbon": {"batches": 4},
@@ -7,6 +7,13 @@
     "nicaragua_acopio_suyatal": {"batches": 5},
     "guatemala_finca_santa_ines_bourbon": {"batches": 3, "note": "1 lb (454 g), untried. Supplier: Sweet Maria's."},
     "colombia_productores_de_buesaco": {"batches": 3, "note": "1 lb (454 g), untried. Supplier: Sweet Maria's."},
-    "colombian_supremo": {"batches": 6, "note": "About 6."}
+    "colombian_supremo": {"batches": 6, "note": "About 6."},
+    "brazil_serra_negra_mwp_decaf": {"batches": 3, "note": "1 lb (454 g), untried. Supplier: Burman Coffee (order #335002). From the 3 lb decaf bundle."},
+    "mexico_esmeralda_ea_natural_decaf": {"batches": 3, "note": "1 lb (454 g), untried. Supplier: Burman Coffee (order #335002). From the 3 lb decaf bundle."},
+    "colombian_royal_select_mwp_decaf": {"batches": 3, "note": "1 lb (454 g), untried. Supplier: Burman Coffee (order #335002). From the 3 lb decaf bundle."},
+    "bali_blue_moon": {"batches": 3, "note": "1 lb (454 g), untried. Supplier: Burman Coffee (order #335002)."},
+    "thailand_doi_inthanon_honey": {"batches": 3, "note": "1 lb (454 g), untried. Supplier: Burman Coffee (order #335002)."},
+    "ethiopia_yirgacheffe_idedo_tigest_wako": {"batches": 3, "note": "1 lb (454 g), untried. Supplier: Burman Coffee (order #335002)."},
+    "png_carpenter_bunum_wo_peaberry": {"batches": 3, "note": "1 lb (454 g), untried. Supplier: Burman Coffee (order #335002)."}
   }
 }

@@ -1,0 +1,66 @@
+{
+  "bean": "png_carpenter_bunum_wo_peaberry",
+  "batchGrams": 155,
+  "charge": {
+    "burner": 55,
+    "sv": 230
+  },
+  "steps": [
+    {
+      "bt": 154,
+      "burner": 45
+    },
+    {
+      "bt": 175,
+      "burner": 40,
+      "air": 40
+    },
+    {
+      "bt": 178,
+      "burner": 35
+    },
+    {
+      "bt": 190,
+      "burner": 30
+    },
+    {
+      "bt": 194,
+      "burner": 25
+    },
+    {
+      "bt": 198,
+      "burner": 15
+    }
+  ],
+  "notes": "Mark FC when multiple pops occur close together; hold settings. Don't increase heat to chase a brief FC dip. Peaberry: roasts evenly, may reach FC a little later. Rest about a week.",
+  "variants": {
+    "espresso": {
+      "drop": {
+        "bt": 207.0
+      },
+      "reference": {
+        "roast": 30,
+        "fc": "7:15",
+        "drop": "10:29"
+      }
+    },
+    "pourover": {
+      "drop": {
+        "bt": 204.3
+      },
+      "reference": {
+        "roast": 40,
+        "fc": "7:00",
+        "drop": "9:35"
+      }
+    }
+  },
+  "history": [
+    {
+      "date": "2026-10-20",
+      "afterRoast": 41,
+      "change": "Initial procedure, copied from Colombian Supremo (current version): charge burner 55 / SV 230; burner 45 at 154, 40 + air 40 at 175, 35 at 178, 30 at 190, 25 at 194, 15 at 198; espresso drop 207.0 and pourover drop 204.3. The references are #30 (espresso) and #40 (pourover), Colombian Supremo roasts with the same steps; there is no roast of this bean yet.",
+      "why": "Untried bean, so this starts from the most similar one with history. Burman's Papua New Guinea Carpenter Estates Bunum Wo Kula Peaberry (Burman Coffee order #335002 (2026-10-14), 1 lb, 3 batches; lot 0008, arrived 2026-04-17): Bunum Wo, one of Carpenter Estate's three sections (with Sigri and Kindeng), over 5,000 ft (1,500+ m), shade grown; washed (three days' fermentation with daily washes, a day under water, 21 days' conditioning), hand and color sorted, large-screen peaberry with almost no defects. Smooth, rich, chocolatey with spice, a pinch of brightness and no fruit; medium to full body, creamy, low acidity; like a Sumatra without the earthiness. Best at solid medium to medium-dark: avoid light, which leaves the chocolate underdeveloped. Very easy to roast and even, since peaberries roll well; fresh beans may take longer to reach FC (this lot arrived in April, so less so). Reviewers liked 11-12 minute roasts with 18-21% development short of second crack, or just into it, and a week's rest. Dense, washed, high-grown and chocolate-forward, so the Colombian Supremo's steps carry over. Espresso drops at 207.0, just under the Supremo's Full City+ (207.4), for the medium-dark Burman recommends; pourover at the Supremo's 204.3, a solid medium, since Burman warns against going lighter. Peaberries are round and dense and often take a little longer to FC; if FC lands well after the Supremo's ~7:00-7:15, keep the drops and let the time stretch. First guesses; adjust after tasting, after about a week's rest."
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "bean": "bali_blue_moon",
+  "batchGrams": 155,
+  "charge": {
+    "burner": 55,
+    "sv": 230
+  },
+  "steps": [
+    {
+      "bt": 154,
+      "burner": 45
+    },
+    {
+      "bt": 175,
+      "burner": 40,
+      "air": 40
+    },
+    {
+      "bt": 178,
+      "burner": 35
+    },
+    {
+      "bt": 190,
+      "burner": 30
+    },
+    {
+      "bt": 194,
+      "burner": 25
+    },
+    {
+      "bt": 198,
+      "burner": 15
+    }
+  ],
+  "drop": {
+    "bt": 207.0
+  },
+  "reference": {
+    "roast": 30,
+    "fc": "7:15",
+    "drop": "10:29"
+  },
+  "notes": "Mark FC when multiple pops occur close together; hold settings. Don't increase heat to chase a brief FC dip. Wet hulled: uneven color is normal. It may take longer to reach FC, then runs quickly toward second crack.",
+  "history": [
+    {
+      "date": "2026-10-20",
+      "afterRoast": 41,
+      "change": "Initial procedure, copied from Colombian Supremo (current version): charge burner 55 / SV 230; burner 45 at 154, 40 + air 40 at 175, 35 at 178, 30 at 190, 25 at 194, 15 at 198; drop at 207.0, one procedure (no variants). The reference is #30 (Colombian Supremo espresso, the same steps); there is no roast of this bean yet.",
+      "why": "Untried bean, so this starts from the most similar one with history. Burman's Indonesian Bali Org. Blue Moon, wet hulled (Burman Coffee order #335002 (2026-10-14), 1 lb, 3 batches; lot 6613, arrived 2026-09-01): Kintamani highlands on Mount Agung's volcanic soil, 1,200-1,600 m, about 40 family farms in Subak Abian groups milled by Indokom; Bourbon (S795, USDA 762), Typica and Catimor; wet hulled (giling basah), organically grown. A smoother, sweeter cousin of Sumatra: malt, chocolate, molasses toward second crack, full body, some earthiness, little acidity. Burman's go-to for strong medium to dark: Full City, or anything but light, and a bit lighter than Sumatra; done when a slight sheen turns to a spot of oil. Jon Burman says it takes more heat than usual to reach first crack and then moves quickly toward second; uneven color is normal for wet hulled coffee; low chaff. We have no wet-hulled roast, so this starts from the Colombian Supremo, our most-roasted dense high-grown coffee, whose espresso roasts (Full City+, 207.4) are the darkest we make. The drop is 207.0, just under the Supremo's, because Burman says it rushes from FC to second crack (here 202-207): the Supremo's cuts at 190, 194 and 198 stay to slow that run. One procedure, no variants: Burman recommends it only for strong medium and darker, where it suits espresso and milk drinks. Watch for FC later than the Supremo's ~7:00-7:15 (it 'takes more heat'); if it stalls under 180 or runs past 8:00, raise the charge burner next time rather than adding steps. First guess; adjust after tasting."
+    }
+  ]
+}

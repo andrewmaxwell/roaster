@@ -1,0 +1,66 @@
+{
+  "bean": "thailand_doi_inthanon_honey",
+  "batchGrams": 155,
+  "charge": {
+    "burner": 55,
+    "sv": 230
+  },
+  "steps": [
+    {
+      "bt": 154,
+      "burner": 45
+    },
+    {
+      "bt": 175,
+      "burner": 40,
+      "air": 40
+    },
+    {
+      "bt": 178,
+      "burner": 35
+    },
+    {
+      "bt": 190,
+      "burner": 30
+    },
+    {
+      "bt": 194,
+      "burner": 25
+    },
+    {
+      "bt": 198,
+      "burner": 15
+    }
+  ],
+  "notes": "Mark FC when multiple pops occur close together; hold settings. Don't increase heat to chase a brief FC dip. Chaffy, and the color may come out a little uneven; that's normal for this bean.",
+  "variants": {
+    "espresso": {
+      "drop": {
+        "bt": 206.0
+      },
+      "reference": {
+        "roast": 30,
+        "fc": "7:15",
+        "drop": "10:29"
+      }
+    },
+    "pourover": {
+      "drop": {
+        "bt": 203.5
+      },
+      "reference": {
+        "roast": 40,
+        "fc": "7:00",
+        "drop": "9:35"
+      }
+    }
+  },
+  "history": [
+    {
+      "date": "2026-10-20",
+      "afterRoast": 41,
+      "change": "Initial procedure, copied from Colombian Supremo (current version): charge burner 55 / SV 230; burner 45 at 154, 40 + air 40 at 175, 35 at 178, 30 at 190, 25 at 194, 15 at 198; espresso drop 206.0 and pourover drop 203.5. The references are #30 (espresso) and #40 (pourover), Colombian Supremo roasts with the same steps; there is no roast of this bean yet.",
+      "why": "Untried bean, so this starts from the most similar one with history. Burman's Thailand Lanna Coffee Doi Inthanon Honey Processed (Burman Coffee order #335002 (2026-10-14), 1 lb, 3 batches; lot 0013, arrived 2026-09-03): Chom Thong, Chiang Mai, villages on Doi Inthanon working with the Integrated Tribal Development Foundation (Thailand's first Fairtrade cooperative); Catimor at 1,600 m. The description says honey processed, though the listing's details say washed. Light: lemony citrus, maybe lime, nutty, faint red fruit as it cools. Medium: rich chocolate, spice, tree nut, herbal notes, fuller body. Dark: strong, for espresso or milk. Best at medium to dark, medium usually the favorite; easy to roast, naturally chaffy and a little uneven. No screen size given. Dense high-grown washed coffee, so the Colombian Supremo's steps carry over. Honey-processed coffee keeps some fruit sugar on the bean and can brown and crack a little earlier than washed; watch whether FC lands before the Supremo's ~7:00. Both drops sit just under the Supremo's (espresso 206.0 vs 207.4, pourover 203.5 vs 204.3), as with the Colombia Buesaco, aiming at the medium Burman calls the favorite. First guesses; adjust after tasting."
+    }
+  ]
+}

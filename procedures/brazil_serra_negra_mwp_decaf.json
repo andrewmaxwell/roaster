@@ -1,0 +1,44 @@
+{
+  "bean": "brazil_serra_negra_mwp_decaf",
+  "batchGrams": 155,
+  "charge": {
+    "burner": 45,
+    "sv": 230
+  },
+  "steps": [
+    {
+      "bt": 150,
+      "burner": 40
+    },
+    {
+      "bt": 175,
+      "burner": 35,
+      "air": 40
+    },
+    {
+      "bt": 189,
+      "burner": 30
+    },
+    {
+      "bt": 196,
+      "burner": 25
+    }
+  ],
+  "drop": {
+    "bt": 205.0
+  },
+  "reference": {
+    "roast": 29,
+    "fc": "6:48",
+    "drop": "9:57"
+  },
+  "notes": "Mark FC when multiple pops occur close together; hold settings. Don't increase heat to chase a brief FC dip. Decaf: FC comes early and Burman says this one's crack is soft and hard to hear; listen closely. Aim medium-dark, just before second crack.",
+  "history": [
+    {
+      "date": "2026-10-20",
+      "afterRoast": 41,
+      "change": "Initial procedure, copied from Honduran MWP Decaf (current version): charge burner 45 / SV 230; burner 40 at 150, 35 + air 40 at 175, 30 at 189, 25 at 196; drop raised from 202.8 to 205.0. The reference is #29 (Honduran MWP, the same steps); there is no roast of this bean yet.",
+      "why": "Untried bean, so this starts from the most similar one with history. Burman's Decaffeinated Brazil Serra Negra MWP (part of the 3 lb decaf bundle; Burman Coffee order #335002 (2026-10-14), 1 lb, 3 batches; its notes also call it Decaf Brazil Mogiana): Brazilian beans, Mountain Water Process at Descamex in Mexico. Very low acidity, creamy heavy body, dark chocolate and roasted nuts. Burman recommends Medium-Dark, just before or entering second crack, warns that very light roasts taste flat, and that its first crack can be soft and hard to hear. The listing gives no variety, altitude or screen size. Honduran MWP Decaf is the closest bean with history (an MWP decaf from the same plant, made for the same lattes), so its steps carry over. The drop goes up 2.2 to 205.0 because Burman wants this one darker than the Honduran's 202.8: on this probe second crack starts around 202-207, and 205 is near the Colombian Supremo espresso's Full City+ (207.4) without going into it. Brazilian coffee is grown lower and is less dense than Central American, so FC may come earlier than #29's 6:48 and development run long; if it does, cut the drop rather than the heat. Listen hard for FC (the mic hint may help). First guess; adjust after tasting."
+    }
+  ]
+}

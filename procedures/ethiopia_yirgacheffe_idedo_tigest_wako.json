@@ -1,0 +1,66 @@
+{
+  "bean": "ethiopia_yirgacheffe_idedo_tigest_wako",
+  "batchGrams": 155,
+  "charge": {
+    "burner": 55,
+    "sv": 230
+  },
+  "steps": [
+    {
+      "bt": 154,
+      "burner": 45
+    },
+    {
+      "bt": 175,
+      "burner": 40,
+      "air": 40
+    },
+    {
+      "bt": 178,
+      "burner": 35
+    },
+    {
+      "bt": 190,
+      "burner": 30
+    },
+    {
+      "bt": 194,
+      "burner": 25
+    },
+    {
+      "bt": 198,
+      "burner": 15
+    }
+  ],
+  "notes": "Mark FC when multiple pops occur close together; hold settings. Don't increase heat to chase a brief FC dip. Easy to roast the fruit out: don't go past the drop. Higher chaff; may look a little two-toned. Rest a week or more.",
+  "variants": {
+    "pourover": {
+      "drop": {
+        "bt": 201.5
+      },
+      "reference": {
+        "roast": 40,
+        "fc": "7:00",
+        "drop": "9:35"
+      }
+    },
+    "espresso": {
+      "drop": {
+        "bt": 204.0
+      },
+      "reference": {
+        "roast": 40,
+        "fc": "7:00",
+        "drop": "9:35"
+      }
+    }
+  },
+  "history": [
+    {
+      "date": "2026-10-20",
+      "afterRoast": 41,
+      "change": "Initial procedure, copied from Colombian Supremo (current version): charge burner 55 / SV 230; burner 45 at 154, 40 + air 40 at 175, 35 at 178, 30 at 190, 25 at 194, 15 at 198; pourover (first, the default) drop 201.5 and espresso drop 204.0. The reference for both is #40 (Colombian Supremo pourover, the same steps); there is no roast of this bean yet.",
+      "why": "Untried bean, so this starts from the most similar one with history. Burman's Ethiopian Yirgacheffe Natural Gr. 1, Idedo, Mrs. Tigest Wako (Burman Coffee order #335002 (2026-10-14), 1 lb, 3 batches; lot 0006, arrived 2026-09-17): one producer's 7.6 ha farm in Idedo, Gedeo zone, one of the two localities making top Yirgacheffe; 1,900-2,400 m; heirloom varieties (74110 and 74112 replacing Kurume and Dega); natural, dried 8-25 days on raised beds; through the Small Farmer Project with Lulo Coffees. Crisp clean fruit and florals, darker fruit, a tea-like spice, maybe a chocolate undertone; sweet, delicate, a little lower acidity. Burman: 'keep this one light to medium roasted', start at a nice medium; it is easy to roast out the fruit, so don't let it get dark. Higher chaff, maybe a little two-toned; a longer rest smooths the cup (it is more extreme 1-2 days after roasting). A reviewer dropped about 45 s into first crack. No screen size given. Our only Ethiopian history is Ethiopiques V2 (#5, #7), a blend on older Artisan settings: FC at 180-183, drop 206-208, darker than this bean wants. At 1,900-2,400 m this is the densest coffee we have bought, so it starts from the Colombian Supremo, our dense high-grown procedure, whose cuts at 190-198 keep the run after FC gentle. The drops are the lightest we have used: pourover 201.5, 2.8 under the Supremo's pourover (204.3), aiming at City+ where the fruit is; espresso 204.0, before second crack (202-207 on this probe). Pourover is listed first, so it's the default, since the bean is best light. Watch FC: Ethiopiques cracked at 180-183, much earlier than the Supremo's 187-189; if this does too, development will run long at these drops, so shorten it by lowering the drop rather than raising the heat. First guesses; adjust after tasting, after a rest of a week or more."
+    }
+  ]
+}

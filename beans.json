@@ -57,5 +57,40 @@
     "name": "Colombia Productores de Buesaco",
     "supplier": "Sweet Maria's",
     "aliases": ["colombia_productores_de_buesaco"]
+  },
+  "brazil_serra_negra_mwp_decaf": {
+    "name": "Brazil Serra Negra MWP Decaf",
+    "supplier": "Burman Coffee",
+    "aliases": ["brazil_serra_negra_mwp_decaf"]
+  },
+  "mexico_esmeralda_ea_natural_decaf": {
+    "name": "Mexico Esmeralda EA Natural Decaf",
+    "supplier": "Burman Coffee",
+    "aliases": ["mexico_esmeralda_ea_natural_decaf"]
+  },
+  "colombian_royal_select_mwp_decaf": {
+    "name": "Colombian Royal Select MWP Decaf",
+    "supplier": "Burman Coffee",
+    "aliases": ["colombian_royal_select_mwp_decaf"]
+  },
+  "bali_blue_moon": {
+    "name": "Bali Blue Moon",
+    "supplier": "Burman Coffee",
+    "aliases": ["bali_blue_moon"]
+  },
+  "thailand_doi_inthanon_honey": {
+    "name": "Thailand Doi Inthanon Honey",
+    "supplier": "Burman Coffee",
+    "aliases": ["thailand_doi_inthanon_honey"]
+  },
+  "ethiopia_yirgacheffe_idedo_tigest_wako": {
+    "name": "Ethiopia Yirgacheffe Idedo Tigest Wako",
+    "supplier": "Burman Coffee",
+    "aliases": ["ethiopia_yirgacheffe_idedo_tigest_wako"]
+  },
+  "png_carpenter_bunum_wo_peaberry": {
+    "name": "PNG Carpenter Bunum Wo Peaberry",
+    "supplier": "Burman Coffee",
+    "aliases": ["png_carpenter_bunum_wo_peaberry"]
   }
 }
