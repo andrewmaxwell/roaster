@@ -30,7 +30,12 @@
     "BT": 207.4
   },
   "cool": null,
-  "notes": [],
+  "notes": [
+    {
+      "date": "2026-10-21",
+      "text": "Half-caf lattes, the past few mornings: 12 g of this Colombian Supremo (roasted 10/3) + 6 g Colombia Huila EA Decaf #35 (roasted 10/3). Rested about 15-18 days. \"Decent, but not amazing.\""
+    }
+  ],
   "source": "artisan",
   "artisan": {
     "title": "Roaster Scope",
