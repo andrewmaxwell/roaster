@@ -25,7 +25,7 @@
     }
   ],
   "drop": {
-    "bt": 205.0
+    "bt": 203.5
   },
   "reference": {
     "roast": 29,
@@ -39,6 +39,12 @@
       "afterRoast": 41,
       "change": "Initial procedure, copied from Honduran MWP Decaf (current version): charge burner 45 / SV 230; burner 40 at 150, 35 + air 40 at 175, 30 at 189, 25 at 196; drop raised from 202.8 to 205.0. The reference is #29 (Honduran MWP, the same steps); there is no roast of this bean yet.",
       "why": "Untried bean, so this starts from the most similar one with history. Burman's Decaffeinated Brazil Serra Negra MWP (part of the 3 lb decaf bundle; Burman Coffee order #335002 (2026-10-14), 1 lb, 3 batches; its notes also call it Decaf Brazil Mogiana): Brazilian beans, Mountain Water Process at Descamex in Mexico. Very low acidity, creamy heavy body, dark chocolate and roasted nuts. Burman recommends Medium-Dark, just before or entering second crack, warns that very light roasts taste flat, and that its first crack can be soft and hard to hear. The listing gives no variety, altitude or screen size. Honduran MWP Decaf is the closest bean with history (an MWP decaf from the same plant, made for the same lattes), so its steps carry over. The drop goes up 2.2 to 205.0 because Burman wants this one darker than the Honduran's 202.8: on this probe second crack starts around 202-207, and 205 is near the Colombian Supremo espresso's Full City+ (207.4) without going into it. Brazilian coffee is grown lower and is less dense than Central American, so FC may come earlier than #29's 6:48 and development run long; if it does, cut the drop rather than the heat. Listen hard for FC (the mic hint may help). First guess; adjust after tasting."
+    },
+    {
+      "date": "2026-10-27",
+      "afterRoast": 45,
+      "change": "Drop lowered from 205.0 to 203.5; steps unchanged.",
+      "why": "Before the first roast of this bean. All 12 decaf-procedure roasts dropped at 202.0-203.3 (#29 and #34, the praised Honduran MWP lattes, at 203.3 and 203.1); 205 would have been the darkest decaf drop on purpose (#41 hit 208 only by running the Supremo procedure, and has no tasting notes). The 205 was placed against where second crack starts on this probe for regular beans, but decaf cracks lower: FC at 178-187 C (median about 182) against the Supremo's about 188, so second crack likely comes earlier too, and 205 in a decaf is probably more like 208-210 in a regular bean, past the Supremo espresso's 207.4. Decaf development already runs 31-35% at 203 with RoR about 8 C/min at the drop, so each degree adds 7-8 s, and a less dense Brazil may crack early and stretch it further. 203.5 stays a little darker than the Honduran's 202.8 (about 5 s), toward Burman's medium-dark without overshooting on an untried bean; raise it a degree if the cup tastes flat. If second crack starts before the drop, open the door."
     }
   ]
 }
