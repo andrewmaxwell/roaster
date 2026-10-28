@@ -360,7 +360,7 @@ function roastSection() {
   // The one button: first crack. The drop is automatic, and dropping early
   // (second crack, smoke) is just opening the door, which the app sees.
   return section(
-    `#${b.number ?? ''} ${esc(b.beanName)}${variant}, ${f(b.weightIn)} g`,
+    `${roastNo(b.number)}${esc(b.beanName)}${variant}, ${f(b.weightIn)} g`,
     `<div class="row" style="flex-direction: column; align-items: stretch">
        ${
          b.fc
@@ -372,6 +372,8 @@ function roastSection() {
     'batch',
   );
 }
+
+const roastNo = (n) => (n == null ? '' : `<span class="roastNo">#${n}</span>`);
 
 const what = (s) =>
   [s.burner != null && `burner ${s.burner}%`, s.air != null && `air ${s.air}%`]
@@ -479,8 +481,9 @@ function weightOutSection() {
     weight = `<div class="row"><label>Weight out <input id="weightOut-${last.number}" type="number" min="0" step="0.1"> g</label>
        <button class="primary" data-act="saveWeightOut" data-number="${last.number}">Save</button></div>`;
   return section(
-    `Last roast: #${last.number} ${esc(last.beanName ?? beanName(last.bean))}${variant}`,
+    `${roastNo(last.number)}Last roast: ${esc(last.beanName ?? beanName(last.bean))}${variant}`,
     `${summary.map((x) => `<p class="note" style="margin: 0 0 4px">${x}</p>`).join('')}${weight}`,
+    'batch',
   );
 }
 
