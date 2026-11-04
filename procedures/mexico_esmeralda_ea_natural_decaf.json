@@ -29,14 +29,14 @@
     }
   ],
   "drop": {
-    "bt": 202.8
+    "bt": 204
   },
   "reference": {
     "roast": 35,
     "fc": "6:45",
     "drop": "9:44"
   },
-  "notes": "Mark FC when multiple pops occur close together; hold settings. Don't increase heat to chase a brief FC dip. Decaf: FC comes early (EA decafs cracked at 178-183) and quieter than regular beans.",
+  "notes": "Mark FC when multiple pops occur close together; hold settings. Don't increase heat to chase a brief FC dip. Decaf: FC comes early (EA decafs cracked at 178-183) and quieter than regular beans. If second crack starts before the drop, open the door.",
   "history": [
     {
       "date": "2026-10-20",
@@ -49,6 +49,12 @@
       "afterRoast": 41,
       "change": "Rebased on Colombia Huila EA Decaf #35: charge burner 50 / SV 230; burner 45 at 150, 40 + air 40 at 173, 35 at 185, 30 at 190, 25 at 197 (5 points more burner than the Honduran MWP through FC). Drop stays 202.8. #35 is the reference.",
       "why": "The Huila EA decaf is our only EA decaf with history, and its later roasts (#14, #26, #35) needed about 5 points more burner than the Honduran MWP (#29, #34) to roast on the same schedule: #35 cracked at 6:45 (182.8) and dropped at 9:44 (202.4), against #29's 6:48 and 9:57 at 45/40/35/30/25. So an EA decaf likely takes more heat, and the Honduran settings would probably bring FC late with a weaker RoR. Settings are #35's Artisan burner values minus 10 (Artisan's 5.5 is HP 45, as in the Honduran transcription), at the temperatures they fired: 150.2, 173.2, 185.1, 190.1, 197.3. The drop stays at the Honduran's 202.8 rather than the Huila's 202.0-202.4: the Huila roasts have no tasting notes, while 202.8 made the praised decaf lattes (#29, #34). The Esmeralda shares only the EA process with the Huila (it is Mexican), so watch FC: if it comes much before 6:45, step the heat back toward the Honduran's."
+    },
+    {
+      "date": "2026-11-04",
+      "afterRoast": 48,
+      "change": "Drop raised from 202.8 to 204.0 (saved 20 s before #49, the first roast, charged; #49 had already loaded the old version and dropped at 202.8); steps unchanged. Notes: open the door if second crack starts first.",
+      "why": "Researched just before the first roast. Burman: easy to roast light to dark; light shows a lemony crispness unusual for a decaf, which fades by medium into a smooth, rich chocolate cup; stop before second crack for sweeter, go into it for baker's chocolate. A reviewer found a gentler, slower approach worked. Other roasters list it as Chiapas/Oaxaca, 1,200-1,800 m, Bourbon, Caturra and Typica: dense, high-grown, like the Huila EA decaf this procedure is based on, so its heat stays (#35 ran these settings to FC at 6:45, the Honduran MWP's timing, so it is not a hot roast; #46 on the gentler Honduran settings cracked late, at 7:22). The drop moves because of the tasting notes: #35, the reference (202.4), was \"decent, but not amazing\" in half-caf lattes and had \"a sharp flavor that isn't pleasant\" as an iced caramel latte (though ground too fine), while #41, a decaf that ran to 208 by mistake, was \"very good\" with \"no sharpness\". These decafs go into lattes, where the chocolate of a medium roast suits better than the light end's citrus. 204.0 adds about 10 s of development at the ~8 C/min decaf RoR near the drop, still 4 under #41, and stays clear of second crack; raise it more if the cup is still sharp, lower it if roasty."
     }
   ]
 }
