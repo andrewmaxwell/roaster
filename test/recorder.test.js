@@ -112,12 +112,12 @@ test('a roast is written as it happens, then finalized', async () => {
   for (let i = charged; i <= end; i++)
     if (S.HP[i] !== S.HP[i - 1] && (S.AH[i] === 0 || S.AH[i - 1] === 0))
       burner.push(S.HP[i]);
-  assert.deepEqual(burner, [55, 45, 40, 35, 30, 25, 15, 0]);
+  assert.deepEqual(burner, [55, 45, 40, 30, 25, 15, 0]);
   for (const k of ['BT', 'ET', 'HP', 'FC', 'RC', 'TS', 'AT', 'AH', 'HS', 'CS'])
     assert.equal(S[k].length, S.t.length, k);
-  assert.equal(r.steps.length, 6);
+  assert.equal(r.steps.length, 5);
   assert.ok(r.steps.every((s, i) => i === 0 || s.t > r.steps[i - 1].t));
-  assert.equal(r.procedure.version, 2);
+  assert.equal(r.procedure.version, 3);
   await finish(ctx);
 });
 

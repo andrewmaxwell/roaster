@@ -79,7 +79,7 @@ test('a two-batch session, start to all-off, with 15% of commands dropped', asyn
     assert.ok(b.tp.BT > 95 && b.tp.BT < 125, `TP ${b.tp.BT}`);
     assert.deepEqual(
       b.steps.map((s) => s.bt),
-      [154, 175, 178, 190, 194, 198],
+      [154, 175, 190, 194, 198],
     );
     for (const s of b.steps) assert.ok(s.BT >= s.bt && s.BT < s.bt + 2);
     assert.equal(b.drop.reason, 'temperature');
@@ -420,7 +420,7 @@ test('a restart mid-roast picks up where it left off', async () => {
   assert.equal(b.session.phase, 'ROASTING');
   await clock.until(() => b.log.some((x) => x.e === 'drop'), HOUR, 1500);
   const steps = b.log.filter((x) => x.e === 'step').map((x) => x.b.bt);
-  assert.deepEqual(steps, [190, 194, 198], 'no step fires twice');
+  assert.deepEqual(steps, [194, 198], 'no step fires twice');
   const drop = b.log.find((x) => x.e === 'drop').b;
   assert.ok(drop.BT >= 207.4 && drop.BT < 209.4);
   await finish(b);
@@ -508,7 +508,7 @@ test('a cable pull mid-roast raises the alarm, then the roast carries on', async
   assert.equal(alert.a.level, 'urgent');
   assert.match(alert.a.text, /disconnected/);
   await clock.until(() => log.some((x) => x.e === 'drop'), HOUR, 1500);
-  assert.equal(session.batch.steps.length, 6);
+  assert.equal(session.batch.steps.length, 5);
   await finish(ctx);
 });
 

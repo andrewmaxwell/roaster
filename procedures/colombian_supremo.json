@@ -16,10 +16,6 @@
       "air": 40
     },
     {
-      "bt": 178,
-      "burner": 35
-    },
-    {
       "bt": 190,
       "burner": 30
     },
@@ -47,6 +43,11 @@
     "pourover": {
       "drop": {
         "bt": 204.3
+      },
+      "reference": {
+        "roast": 43,
+        "fc": "7:06",
+        "drop": "10:17"
       }
     }
   },
@@ -61,6 +62,12 @@
       "afterRoast": 37,
       "change": "Split into variants: espresso drops at 207.4 (the existing procedure); pourover drops at 204.3.",
       "why": "Pourover drop copied from roast #23 (the only pour-over roast of this bean). Unverified; revisit after the first pourover batch."
+    },
+    {
+      "date": "2026-11-06",
+      "afterRoast": 49,
+      "change": "Removed the 178 step (burner 40 → 35): the burner stays at 40 through first crack, then 30 at 190, 25 at 194, 15 at 198. Pourover reference: #43. Drops unchanged (espresso 207.4, pourover 204.3).",
+      "why": "The two lattes called excellent (#31 or #32, which one unknown) had 28.5% and 24.9% development, while #37 (\"decent, but not amazing\") and #38 (\"good but not amazing\") had 31.8% and 31.1%, with RoR down to 3.4-5.2 C/min a minute after FC. Their burner and air paths were the same, so this recipe has been running long after FC. Scott Rao's guideline is 20-25% development; long, slow post-crack stretches taste flat or baked. Burman (Colombian Supremo BCT Select: Huila, Tolima, Cauca, Antioquia, Nariño; 1,300-1,650 m; Castillo, Caturra, Colombia, Typica; screen 17/18; washed) puts its sweet spot at Full City, medium to borderline dark, which the drops already are, so the drops stay and the heat around FC changes instead. The heater acts about a minute after a step: the 178 cut landed right at FC and deepened the RoR drop, while the 190 cut lands around FC+80, where it still holds down the rebound. In the simulator the change brings the drop 13-20 s sooner (espresso development 34.0 → 32.1%, pourover 27.7 → 26.3%; the sim doesn't model the real post-FC dip, so expect a little more). The tasting evidence is confounded (#31/#32 were blended with the Honduran MWP decaf, #37 with the Huila EA decaf that tasted sharp alone), so judge by the cup: if the rebound after FC grows past about +3.5 C/min or the cup turns roasty, put the 178 step back. #43 is the pourover reference: charged at ready, FC and drop like #40 and #44."
     }
   ]
 }
