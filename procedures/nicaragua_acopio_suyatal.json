@@ -8,16 +8,11 @@
   "steps": [
     {
       "bt": 150,
-      "burner": 45
+      "burner": 40
     },
     {
       "bt": 175,
-      "burner": 40,
       "air": 40
-    },
-    {
-      "bt": 178,
-      "burner": 35
     },
     {
       "bt": 190,
@@ -51,6 +46,12 @@
       "afterRoast": 41,
       "change": "Initial procedure, transcribed from roast #33 (the only roast of this bean): charge burner 55 / SV 230; burner 45 at 150, 40 + air 40 at 175, 35 at 178, 30 at 190, 25 at 194, 15 at 198; espresso drop at 204.7. #33 is the reference.",
       "why": "#33 (2026-09-25) ran the Colombian Supremo recipe with its first cut at 150 instead of 154: TP 110 at 0:36, FC 6:30 at 185.9, drop 9:33 at 205.0, development 3:03 (31.9%). RoR fell from 8.9 at 6:30 to 5.2 C/min at 7:30 and came back to 7.5 by 8:30, the Supremo's usual crash and flick, nothing to correct. The drop is 204.7 so the 3-reading trigger lands near #33's 205. #33 has no tasting notes or weight out: if you remember how it tasted, that's the first thing to add. Bean: Sweet Maria's, Finca Acopio Suyatal, Dipilto, Nueva Segovia (1,500 m); washed, patio-dried Caturra with some Maragogype, uniform in size (roasts evenly); total score 86.5. Brown sugar, vanilla wafer, walnut, pistachio, cocoa; City+ to Full City+, good for espresso (deep chocolate, hazelnut, good with milk). Espresso variant only, since that's how #33 was roasted and what the supplier suggests."
+    },
+    {
+      "date": "2026-11-12",
+      "afterRoast": 51,
+      "change": "First cut at 150 goes to burner 40 instead of 45, and the 178 cut (40 to 35) is removed, so the burner holds 40 from 150 through first crack (air still goes to 40 at 175); then 30 at 190, 25 at 194, 15 at 198 as before. Drop unchanged (espresso 204.7).",
+      "why": "A deliberately small step toward how professional roasters shape espresso curves. Our roasts reach first crack fast: #33 took 3:26 to 152 C (our yellowing), 3:04 more to FC, then 3:03 of development (36/32/32%). A published espresso profile (Anne Cooper, Cropster, 10 kg drum) reaches yellow at 5-6 minutes and spends at least 4 minutes from yellow to FC and 3-3.5 after it; Rob Hoos ties Maillard length to body, which matters for milk drinks; Scott Rao's guideline is RoR declining all the way to the drop, without a dip and rebound after FC. In #33 RoR went from 8.7 at FC to 5.1 at FC+60, back to 7.6 at FC+120, and was 6.8 at the drop. Lower heat from 150 should lengthen the Maillard phase a little, and with no cut landing about a minute before FC (the heater acts about a minute after a step) there is less to dip at FC; the Colombian Supremo dropped its 178 cut on 2026-11-06 for the same reason. In the simulator: Maillard 3:20 -> 3:29, FC 9 s later, development 3:05 -> 3:03, drop 8 s later; the sim doesn't model the dip at FC, so expect the real dip to be smaller and development maybe a little shorter. Kept small on purpose: earlier changes overshot (the El Salvador's 186 cut aimed for 3:15-3:30 of development and got 2:47). Halving the step to 42 would have done almost nothing in the sim (+6 s). If the cup is good and RoR declines more smoothly, the next step is more Maillard time (burner 38-35 at 150 gave +15-22 s in the sim); if RoR stalls near FC (under about 4 C/min at FC+30) or development runs past 3:30, go back to 45. Weigh the beans out: #33 has no weight out, and weight loss is our stand-in for roast color."
     }
   ]
 }
