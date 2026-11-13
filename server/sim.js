@@ -71,6 +71,14 @@ export class SimKaleido extends EventEmitter {
     physics.charge(this.s, grams, params);
   }
 
+  // The BT where these beans start first crack (the procedure's reference
+  // roast), which centers the simulated crack's RoR dip; physics.js assumes
+  // FC_DEFAULT_C without it.
+  firstCrackAt(BT) {
+    this.advance();
+    if (this.s.Tb != null) this.s.fcBT = BT;
+  }
+
   discharge() {
     this.advance();
     physics.discharge(this.s, params, {FC: this.m.FC, AT: this.ambient});

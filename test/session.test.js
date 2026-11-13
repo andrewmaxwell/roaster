@@ -352,7 +352,8 @@ test('BT past any sane drop drops, whatever the procedure says', async () => {
   const drop = log.find((x) => x.e === 'drop').b;
   assert.equal(drop.reason, 'over temperature');
   assert.ok(drop.BT >= 218 && drop.BT < 220, `${drop.BT}`);
-  assert.equal(sim.m.HP, 0);
+  // (HP 0 goes out in the write queue, about 100 ms after the drop.)
+  await clock.until(() => sim.m.HP === 0, 1000, 100);
   await finish(ctx);
 });
 

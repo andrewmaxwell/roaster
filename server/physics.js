@@ -15,6 +15,16 @@
 
 export const GREEN_TEMP = 22; // °C, beans going in
 const EXO_ONSET = 188; // °C bean temp
+// First crack absorbs heat (water flashing to steam, CO2 escaping): modeled
+// as extra heat capacity, a bump of fitted height (`endo`) and fixed shape,
+// centered CRACK_OFFSET_C above the bean's first-crack BT in bean temp (which
+// leads the probe by a few degrees). The extra capacity slows the beans in
+// proportion to how fast they were heating, as the real dips do (deeper after
+// a fast approach). FC_DEFAULT_C, the median logged FC BT, stands in when the
+// bean's FC BT isn't known.
+export const FC_DEFAULT_C = 187;
+const CRACK_OFFSET_C = 7;
+const CRACK_WIDTH_C = 3;
 const DISCHARGE_TAU_S = 9; // probe settling after the beans come out
 const DISCHARGE_SETTLE_S = 30;
 const DISCHARGE_FALL_C = 20;
@@ -58,9 +68,15 @@ export function step(s, u, params, dt) {
   } else {
     // Beans: heated by drum contact and hot air, plus their own exothermic
     // heat from first crack on (onset fixed near FC temps; only its strength
-    // is fit, or the fit wanders the onset off to nowhere).
+    // is fit, or the fit wanders the onset off to nowhere), slowed while they
+    // crack (see CRACK_OFFSET_C).
     const exo = p.exo / (1 + Math.exp(-(s.Tb - EXO_ONSET) / 4));
-    const dTb = p.beanDrum * (s.D - s.Tb) + p.beanAir * (s.ET - s.Tb) + exo;
+    const x =
+      (s.Tb - (s.fcBT ?? FC_DEFAULT_C) - CRACK_OFFSET_C) / CRACK_WIDTH_C;
+    const crack = (p.endo ?? 0) * Math.exp(-0.5 * x * x);
+    const dTb =
+      (p.beanDrum * (s.D - s.Tb) + p.beanAir * (s.ET - s.Tb) + exo) /
+      (1 + crack);
     dBT = p.probeBeans * (s.Tb - s.BT) + p.probeEnv * (s.ET - s.BT);
     s.Tb += dTb * dt;
   }
@@ -86,9 +102,11 @@ export function initialState(ET, BT, params, u) {
 }
 
 // Beans in. The roast parameters were fit assuming the drum is `drumOffset`
-// above ET at charge, so start it there.
-export function charge(s, grams, params) {
+// above ET at charge, so start it there. fcBT: the BT where these beans start
+// first crack, if known (the procedure's reference roast).
+export function charge(s, grams, params, fcBT) {
   s.Tb = GREEN_TEMP;
+  s.fcBT = fcBT;
   s.grams = grams;
   s.D = s.ET + params.roast.drumOffset;
 }

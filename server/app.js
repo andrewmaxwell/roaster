@@ -101,11 +101,15 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
   }
 
   // The simulator's crack sounds, played by the browser at the right moments
-  // (in real time: the sim may run faster).
+  // (in real time: the sim may run faster), and its first crack's RoR dip,
+  // both centered on the reference roast's FC.
   function simCracks(session) {
     let prev = null;
     let fcBT;
-    session.on('charge', (b) => (fcBT = referenceFC(b.proc)));
+    session.on('charge', (b) => {
+      fcBT = referenceFC(b.proc);
+      sim.firstCrackAt(fcBT);
+    });
     session.on('sample', (s) => {
       const b = session.batch;
       const dtS = prev == null ? 0 : (s.t - prev) / 1000;
