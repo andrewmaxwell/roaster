@@ -20,10 +20,6 @@
       "burner": 35
     },
     {
-      "bt": 190,
-      "burner": 30
-    },
-    {
       "bt": 191,
       "burner": 25
     },
@@ -36,7 +32,7 @@
   "variants": {
     "espresso": {
       "drop": {
-        "bt": 205.7
+        "bt": 207
       },
       "reference": {
         "roast": 36,
@@ -63,6 +59,12 @@
       "afterRoast": 41,
       "change": "Moved the burner 25 cut from 194 to 191; everything else unchanged, including the 205.7 drop.",
       "why": "#39 (the 186 cut from the last change) softened the crash: RoR's low after FC was 4.2 C/min, against 2.4 in #36 (30 s grid from FC). The rebound stayed big: +4.7 C/min, from 4.2 at FC+30 s to 8.8 at FC+120 s (#36: +5.3), while the Colombian Supremo's is +1.6-1.7 in #38 and #40. The heater lags: on this roaster RoR starts to bend 45-75 s after a burner step. In #39 the 194 cut fired 67 s after FC, so it acted only after the rebound had peaked, and the 198 cut (15%, FC+103 s) acted after the drop. At 191 the cut would have fired at FC+38 s in #39, so it should act at about FC+90-110 s, while RoR is still climbing. Expect a smaller rebound, a lower RoR at the drop (6.5 in #39), and development a little longer at the same drop temperature (#39: 2:47, 30%). Watch that RoR doesn't sag under about 4 C/min after FC+60 s; if it does, the cut is too early. One change only, so the next roast shows its effect. The Guatemala Santa Ines procedure was copied from this one but keeps 194 until this roast says something."
+    },
+    {
+      "date": "2026-11-12",
+      "afterRoast": 51,
+      "change": "Espresso drop raised from 205.7 to 207.0, and the burner 30 step at 190 removed (steps now: 45 at 150, 40 + air 40 at 175, 35 at 186, 25 at 191, 15 at 198).",
+      "why": "#36 (REALLY GOOD latte, rested 8 days) developed 3:53 (37.8%) and dropped at 10:19 with RoR 4.5. #39 (good but not amazing, tasted at 17-20 days with a fast 18 s shot) dropped at nearly the same temperature (206.4) but at 9:10, with 2:47 of development (30.2%), RoR 6.5 at the drop and 15.4% weight loss (the Supremo at a similar drop: about 17%), so it was effectively lighter. The 2026-10-11 change aimed at 3:15-3:30 and overshot. Sweet Maria's: City+ is a starting point, and the chocolate and burnt-sugar tones hold up to quite a dark roast and intensify with deeper development; City+ to Full City+, good for espresso and milk drinks. In the simulator, 207.0 adds about 24 s of development; with the untested 191 cut (2026-10-16), expect about 3:15-3:30 (34-36%). The 190 step lasted only about 10 s before the 191 one replaced it, so removing it changes nothing in practice. The sim doesn't model the crash and flick, so it says little about step timing. Taste the next roast at about 8-10 days with the grind dialed in, to compare with #36 fairly."
     }
   ]
 }
