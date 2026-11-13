@@ -6,3 +6,4 @@ selftests/
 package-lock.json
 *.json
 *.md
+.claude/

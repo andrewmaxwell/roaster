@@ -3,7 +3,7 @@ import globals from 'globals';
 import prettier from 'eslint-config-prettier';
 
 export default [
-  {ignores: ['node_modules/', 'ui/vendor/', 'logs/', 'logs-sim/']},
+  {ignores: ['node_modules/', 'ui/vendor/', 'logs/', 'logs-sim/', '.claude/']},
   js.configs.recommended,
   prettier,
   {
