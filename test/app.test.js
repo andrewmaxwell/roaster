@@ -215,3 +215,35 @@ test('an OFF the roaster never confirmed resumes, to turn things off again', asy
   assert.equal(b.app.getSession(), null);
   await b.stop();
 });
+
+test('choosing the beans again clears the last choice’s weight warning', async () => {
+  const {app, stop} = start(saved('PREHEAT'));
+  const session = app.getSession();
+  const texts = () => app.snapshot().alerts.map((a) => a.text);
+  session.alert('warn', 'Something else.');
+  session.selectBatch({
+    bean: 'colombian_supremo',
+    variant: 'espresso',
+    weightIn: 144,
+  });
+  assert.equal(texts().filter((t) => /144 g/.test(t)).length, 1);
+  session.selectBatch({
+    bean: 'colombian_supremo',
+    variant: 'espresso',
+    weightIn: 140,
+  });
+  assert.equal(
+    texts().filter((t) => / g is not/.test(t)).length,
+    1,
+    'replaced, not added',
+  );
+  assert.ok(texts().some((t) => /140 g/.test(t)));
+  session.selectBatch({
+    bean: 'colombian_supremo',
+    variant: 'espresso',
+    weightIn: 155,
+  });
+  assert.deepEqual(texts(), ['Something else.']);
+  // The roast log, if any, keeps what happened; the alert list doesn't.
+  await stop();
+});

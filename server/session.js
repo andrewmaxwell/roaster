@@ -249,11 +249,15 @@ export class Session extends EventEmitter {
     this.doneRequested = false;
     // The steps and drop were worked out for one batch size; #41 was 140 g
     // on a 155 g procedure.
+    // A new choice replaces the last one's warning: the alert list kept
+    // "144 g is not the 155 g" after the weight was fixed (2026-11-12).
     const planned = proc.batchGrams;
+    this.clearAlerts('weight');
     if (planned && Math.abs(weightIn - planned) > planned * WEIGHT_TOLERANCE)
       this.alert(
         'warn',
         `${weightIn} g is not the ${planned} g this procedure was made for, so it will roast faster or slower than its reference.`,
+        'weight',
       );
     // The beans are already in: start their roast from when they went in.
     if (this.pendingCharge && this.phase !== 'ROASTING') {
@@ -875,10 +879,16 @@ export class Session extends EventEmitter {
     this.emit('chime', kind);
   }
 
-  alert(level, text) {
+  // `key` names an alert that a later fix makes stale (clearAlerts). The
+  // roast log keeps every alert regardless; only the UI's list forgets.
+  alert(level, text, key) {
     this.batch?.alerts.push({...this.mark(), level, text});
-    this.emit('alert', {level, text});
+    this.emit('alert', key ? {level, text, key} : {level, text});
     if (level === 'urgent') this.say(text, {urgent: true});
+  }
+
+  clearAlerts(key) {
+    this.emit('alertsCleared', key);
   }
 
   // ---- saving and resuming (so a crash or restart mid-roast isn't fatal)

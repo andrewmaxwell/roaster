@@ -87,6 +87,12 @@ export function startApp({machine, clock, sim, port = 3100, logsDir}) {
       alerts.splice(0, alerts.length - 20);
       broadcast({type: 'alert', alert: a});
     });
+    // (Every action broadcasts the state afterwards, so the UI's list
+    // follows.)
+    session.on('alertsCleared', (key) => {
+      for (let i = alerts.length - 1; i >= 0; i--)
+        if (alerts[i].key === key) alerts.splice(i, 1);
+    });
     // (After the recorder's listener, so the log is written.)
     session.on('batchComplete', (b) => {
       if (b.file) lastBatch = summary(`${b.file}.json`) ?? lastBatch;
