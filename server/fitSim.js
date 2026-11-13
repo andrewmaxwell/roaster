@@ -4,7 +4,9 @@
 //
 // The two parameter sets are fit separately: `empty` on each log's preheat
 // (first sample to charge), `roast` on each roast (charge to drop, starting
-// from the logged temps at charge, closed loop; see replayClosed).
+// from the logged temps at charge, closed loop; see replayClosed). The roast
+// error adds the shape of RoR around first crack (crackError), which the BT
+// curve barely registers: its dip is only 1-2 °C of BT.
 
 import fs from 'fs';
 import path from 'path';
@@ -34,7 +36,7 @@ export function loadRoasts() {
     for (const k of CHANNELS) c[k] = hold(r.samples[k]);
     const start = ok.indexOf(true);
     if (!(start >= 0 && start < ci)) continue;
-    roasts.push({name: f, grams: r.weightIn, c, ci, di, start});
+    roasts.push({name: f, grams: r.weightIn, fc: r.fc, c, ci, di, start});
   }
   return roasts;
 }
@@ -124,7 +126,7 @@ export function replayClosed(r, params) {
   const avg = (xs) => xs.slice(ci - 40, ci).reduce((a, b) => a + b, 0) / 40;
   const u0 = {duty: avg(c.HP), FC: avg(c.FC), AT: c.AT[ci] || GREEN_TEMP};
   const s = initialState(c.ET[ci], c.BT[ci], params, u0);
-  charge(s, r.grams, params);
+  charge(s, r.grams, params, r.fc?.BT);
   const events = roastEvents(r);
   const u = {duty: c.HP[ci], FC: c.FC[ci], AT: u0.AT};
   let min = Infinity;
@@ -146,8 +148,101 @@ export function replayClosed(r, params) {
   return out;
 }
 
+// RoR (30 s least squares, °C/min, as the app shows) every 30 s from FC-60 to
+// FC+180, stopping at the end of the data.
+const GRID = [-60, -30, 0, 30, 60, 90, 120, 150, 180];
+export function rorGrid(t, BT, tf) {
+  const out = [];
+  let lo = 0;
+  let hi = 0;
+  for (const g of GRID) {
+    const tq = tf + g;
+    if (tq > t.at(-1)) {
+      out.push(NaN);
+      continue;
+    }
+    while (hi < t.length - 1 && t[hi + 1] <= tq) hi++;
+    while (t[lo] < tq - 30) lo++;
+    let n = 0,
+      st = 0,
+      sv = 0,
+      stt = 0,
+      stv = 0;
+    for (let i = lo; i <= hi; i++) {
+      if (BT[i] == null) continue;
+      const x = (t[i] - tq) / 60;
+      n++;
+      st += x;
+      sv += BT[i];
+      stt += x * x;
+      stv += x * BT[i];
+    }
+    const d = n * stt - st * st;
+    out.push(n < 2 || d === 0 ? NaN : (n * stv - st * sv) / d);
+  }
+  return out;
+}
+
+// The real RoR around first crack, for roasts with a logged FC at least a
+// minute before the drop (cached on r).
+export function realCrack(r) {
+  if (r.crack !== undefined) return r.crack;
+  const {c, ci, di, fc} = r;
+  r.crack = null;
+  if (fc && fc.t + 60 <= c.t[di]) {
+    const t = c.t.slice(ci, di + 1);
+    const BT = c.BT.slice(ci, di + 1).map((b, i) => (c.ok[ci + i] ? b : null));
+    r.crack = {fcBT: fc.BT, grid: rorGrid(t, BT, fc.t)};
+  }
+  return r.crack;
+}
+
+// The shape of RoR around first crack, from a grid: RoR at FC, how far it
+// falls in the next 90 s (dip), and how far it climbs back from that low by
+// FC+180 or the drop (rebound). Timing-free: the real low comes 30-150 s after
+// the FC mark, so a fit to the grid itself is rewarded for a shallow,
+// smeared dip.
+export function crackShape(g) {
+  const after = g.slice(3, 6).filter(Number.isFinite);
+  if (!Number.isFinite(g[2]) || !after.length) return null;
+  const low = Math.min(...after);
+  const rest = g.slice(g.indexOf(low)).filter(Number.isFinite);
+  return {r0: g[2], dip: g[2] - low, rebound: Math.max(...rest) - low};
+}
+
+// The simulated crack's shape (around when its BT first reaches the real FC's
+// BT, past the turning point) against the real one's, as an RMS over r0, dip
+// and rebound in °C/min.
+export function crackError(r, sim) {
+  const real = realCrack(r);
+  const want = real && crackShape(real.grid);
+  if (!want) return null;
+  const t = r.c.t.slice(r.ci, r.ci + sim.length);
+  const BT = sim.map((x) => x.BT);
+  const k = BT.findIndex((b, i) => t[i] > 120 && b >= real.fcBT);
+  const got =
+    k < 0 ? {r0: 0, dip: 0, rebound: 0} : crackShape(rorGrid(t, BT, t[k]));
+  if (!got) return null;
+  return Math.sqrt(
+    ((got.r0 - want.r0) ** 2 +
+      (got.dip - want.dip) ** 2 +
+      (got.rebound - want.rebound) ** 2) /
+      3,
+  );
+}
+
+// Per roast: BT/ET RMSE (°C) plus the crack shape's error (°C/min), weighted
+// equally.
+export const CRACK_WEIGHT = 1;
 export const roastError = (roasts, params) =>
-  mean(roasts.map((r) => rmse(r, replayClosed(r, params), r.ci)));
+  mean(
+    roasts.map((r) => {
+      const sim = replayClosed(r, params);
+      const e = rmse(r, sim, r.ci);
+      const ce = CRACK_WEIGHT ? crackError(r, sim) : null;
+      return ce == null ? e : e + CRACK_WEIGHT * ce;
+    }),
+  );
 
 // Nelder-Mead, restarted around the best point a few times (a single run
 // tends to collapse its simplex early in this many dimensions).
@@ -219,6 +314,7 @@ export const INITIAL = {
     beanDrum: 0.003,
     beanAir: 0.002,
     exo: 0.05,
+    endo: 0.5,
     probeBeans: 0.05,
     probeEnv: 0.005,
   },
@@ -228,16 +324,19 @@ export const INITIAL = {
 // parameter may move at most e^4 (55x) from INITIAL, which keeps the search
 // away from values the model ignores (they'd drift to infinity) and from
 // rates so fast the Euler integration blows up.
-function fitSet(roasts, params, set, errFn, {iters, restarts}) {
+export function fitSet(roasts, params, set, errFn, {iters, restarts}) {
   const keys = Object.keys(INITIAL[set]);
   const toP = (x) => ({
     ...params,
-    [set]: Object.fromEntries(
-      keys.map((k, j) => {
-        const lim = Math.log(INITIAL[set][k]);
-        return [k, Math.exp(Math.max(lim - 4, Math.min(lim + 4, x[j])))];
-      }),
-    ),
+    [set]: {
+      ...params[set],
+      ...Object.fromEntries(
+        keys.map((k, j) => {
+          const lim = Math.log(INITIAL[set][k]);
+          return [k, Math.exp(Math.max(lim - 4, Math.min(lim + 4, x[j])))];
+        }),
+      ),
+    },
   });
   const safe = (x) => {
     const e = errFn(roasts, toP(x));
@@ -247,19 +346,30 @@ function fitSet(roasts, params, set, errFn, {iters, restarts}) {
   return toP(minimize(safe, x0, iters, restarts).x);
 }
 
-export function fit(roasts, opts = {iters: 1000, restarts: 4}) {
+// Nelder-Mead only finds a nearby minimum, so each fit starts from the last
+// one (`start`, simParams.json), with INITIAL for any parameter it lacks; from
+// INITIAL alone the roast set lands far worse (2026-11-12: 9.3 vs 6.4).
+export function fit(roasts, opts = {iters: 1000, restarts: 4}, start = {}) {
+  const from = Object.fromEntries(
+    Object.keys(INITIAL).map((set) => [
+      set,
+      {...INITIAL[set], ...pick(start[set], Object.keys(INITIAL[set]))},
+    ]),
+  );
   console.log('empty drum (preheat):');
-  const params = fitSet(roasts, INITIAL, 'empty', preheatError, opts);
+  const params = fitSet(roasts, from, 'empty', preheatError, opts);
   console.log('with beans (roast):');
   return fitSet(roasts, params, 'roast', roastError, opts);
 }
 
+const pick = (o, keys) =>
+  Object.fromEntries(keys.filter((k) => o?.[k] != null).map((k) => [k, o[k]]));
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const file = path.join(here, 'simParams.json');
   const roasts = loadRoasts();
   console.log(`fitting to ${roasts.length} roasts`);
-  const params = fit(roasts);
-  fs.writeFileSync(
-    path.join(here, 'simParams.json'),
-    JSON.stringify(params, null, 2) + '\n',
-  );
+  const start = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file)) : {};
+  const params = fit(roasts, undefined, start);
+  fs.writeFileSync(file, JSON.stringify(params, null, 2) + '\n');
 }
