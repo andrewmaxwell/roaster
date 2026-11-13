@@ -178,6 +178,27 @@ Resolve bean names through `beans.json` (old filenames spell them inconsistently
 4. Propose concrete edits to `procedures/<bean>.json`, explained by the curve and the tasting notes. One or two changes per iteration, so cause and effect stay readable.
 5. Once the user agrees, apply them and append a `history` entry (`date`, `afterRoast`, `change`, `why`).
 
+**Changes overshoot; size them small.** The user has seen several adjustments miss what they aimed for: the El Salvador's 186 cut aimed for 3:15-3:30 of development and got 2:47 (#39); its 207.0 drop aimed for 3:15-3:30 and got 2:53 (#52), because #52 came into FC 1-1.5 °C/min hotter than #39 on the same steps. Run-to-run variation is about ±20 s of development, as big as one step's effect, so predict a range, take half-steps, and judge over two roasts.
+
+### How our curves compare to professional roasting
+
+Researched 2026-11-12. Compare times and shapes only: our probe reads FC at 185-190 °C, other roasters' charts often higher.
+
+| | Ours (#30-#53, median) | Pro guidance |
+|---|---|---|
+| Total | 9-11 min | an espresso profile (Anne Cooper, Cropster, 10 kg) adds up to about 12-13.5 min |
+| Charge → 152 °C (our yellowing) | ~3:30 (35%) | yellow at 5-6 min |
+| 152 °C → FC (Maillard) | ~3:30 (34%) | at least 4 min |
+| FC → drop | ~3:00 (30%) | 3-3.5 min for espresso; Scott Rao: 20-25% of the roast |
+| BT rise after FC | 15-20 °C | 20-30 °F (11-17 °C) is common |
+| RoR after FC | dips a median 3.8 °C/min, rebounds +2.5 | declining smoothly to the drop (Rao) |
+
+- **Our development minutes match the pros'; our pre-crack phases are short.** That's why our development % looks high. Rob Hoos ties Maillard length to body (second-hand: his book wasn't checked), which matters for the user's milk drinks.
+- **The dip and rebound:** Rao calls a rebound "flick" a sign of baked, flat flavors; others dispute it without sensory evidence (r/roasting). The user's notes don't settle it: #36, with the deepest dip (2.4), was the El Salvador they loved. Much of the dip comes from the crack itself, not our heat cuts: #53 held burner 40 through FC and still dipped to 4.3.
+- **Judge roast degree by time and rise after FC plus a color check**, not development % alone: two roasts with the same % can differ by 10 °F of rise. Pros measure color; our stand-in is weight loss (13-18% so far), so weigh every batch.
+- **The Nicaragua is the test bean for a longer Maillard phase** (2026-11-12, #53: burner 40 from 150 through FC gave 3:20 from 152 °C to FC vs #33's 3:04). Lengthen it in small steps (burner 35-38 at 150 next, if the cup is good) and keep development about the same.
+- Sources: [Cropster, RoR in production](https://www.cropster.com/blog-post/using-rate-of-rise-to-your-advantage-in-a-production-setting/), [Rao's development ratio (Home-Barista)](https://www.home-barista.com/roasting/development-time-as-ratio-roast-time-by-scott-rao-t30830.html), [FreshCup on Hoos and body](https://freshcup.com/the-effect-of-roast-profile-on-body/), [r/roasting on baked coffee](https://r.enesgenc.dev/r/roasting/comments/1k9c8lj/baked_coffee), [Kaleido M1 LITE thread](https://www.home-barista.com/roasting/kaleido-m1-lite-200g-coffee-roaster-artisan-system-t103070-20.html).
+
 ## Tasting notes
 
 The user mentions drinks in passing ("a latte with 11 g of the Colombian Supremo from 9/21 was excellent"). Record them without being asked:
