@@ -1,0 +1,62 @@
+{
+  "bean": "colombia_caficultores_de_narino",
+  "batchGrams": 155,
+  "charge": {
+    "burner": 55,
+    "sv": 230
+  },
+  "steps": [
+    {
+      "bt": 154,
+      "burner": 45
+    },
+    {
+      "bt": 175,
+      "burner": 40,
+      "air": 40
+    },
+    {
+      "bt": 190,
+      "burner": 30
+    },
+    {
+      "bt": 194,
+      "burner": 25
+    },
+    {
+      "bt": 198,
+      "burner": 15
+    }
+  ],
+  "notes": "Mark FC when multiple pops occur close together; hold settings. Don't increase heat to chase a brief FC dip. Weigh every batch out: gift batches should match each other. Rest 4-7 days before giving; give within about 3 weeks of roasting.",
+  "variants": {
+    "pourover": {
+      "drop": {
+        "bt": 204.3
+      },
+      "reference": {
+        "roast": 51,
+        "fc": "6:50",
+        "drop": "9:11"
+      }
+    },
+    "espresso": {
+      "drop": {
+        "bt": 206.5
+      },
+      "reference": {
+        "roast": 30,
+        "fc": "7:15",
+        "drop": "10:29"
+      }
+    }
+  },
+  "history": [
+    {
+      "date": "2026-11-16",
+      "afterRoast": 53,
+      "change": "Initial procedure, copied from Colombian Supremo (current version, without the 178 cut): charge burner 55 / SV 230; burner 45 at 154, 40 + air 40 at 175, 30 at 190, 25 at 194, 15 at 198. Pourover (first, the default) drop 204.3, the Supremo's; espresso drop 206.5, 0.9 under the Supremo's 207.4. References: Supremo #51 (pourover, the same steps) and #30 (espresso); there is no roast of this bean yet.",
+      "why": "Bought as the gift coffee (5 lb, Sweet Maria's, 2026-11-16) for family who brew drip, replacing the Colombian Supremo pourover batches given away in #42, #50, #51. Sweet Maria's Colombia Caficultores de Nariño: a small-producer blend from La Union, San Lorenzo and San Pedro de Cartago, Nariño, on the Western Andes' high ridges (upwards of 2,000 m); Bourbon, Caturra, Catimor, Variedad Colombia, Typica; washed (overnight tank ferment), covered sun-dried; arrived Oct 2026 (fresh crop); Excelso 15+, 15-17 screen, 0.2 defects/300 g; total score 87.3; City to Full City+, good for espresso. Semi-sweet chocolate, raw sugar (piloncillo), molasses, caramel and a little dried apple in the aroma, a hint of malic acidity; 'crowd-pleasing at a range of roast levels'; more depth of dark chocolate at Full City, with the sweetness intact. Most similar beans with history: Colombian Supremo (a washed Colombian, our most-roasted bean) and the Buesaco (same region, but never roasted). The Supremo's current steps are copied as they are. Expect FC a little later than the Supremo's 6:50-7:15: this is grown higher (denser) and is fresh crop (more moisture), though its smaller screen (15-17 against 17/18) heats faster and may cancel that. Pourover keeps the Supremo pourover's 204.3, the roast family already got as gifts and a medium where Sweet Maria's finds the chocolate and sweetness; it is listed first so it's the default, since most of this bean is for gifts. Espresso is a little lighter than the Supremo's 207.4, which the user found 'good but not amazing': 206.5 aims at Full City, just short of second crack (206-207 on this probe), keeping the sweetness for milk drinks. In the simulator (which doesn't know this bean, so it runs like the Supremo): FC 6:53 at 188.0; pourover drop 9:24 at 204.6 (2:32, 27%; real #51 dropped at 9:11); espresso drop 9:47 at 206.9 (2:54, 30%), 9 s before the Supremo espresso's. Both first guesses; adjust after tasting."
+    }
+  ]
+}

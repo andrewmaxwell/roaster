@@ -1,0 +1,66 @@
+{
+  "bean": "ethiopia_dry_process_bobea_uke",
+  "batchGrams": 155,
+  "charge": {
+    "burner": 55,
+    "sv": 230
+  },
+  "steps": [
+    {
+      "bt": 154,
+      "burner": 45
+    },
+    {
+      "bt": 175,
+      "burner": 40,
+      "air": 40
+    },
+    {
+      "bt": 178,
+      "burner": 35
+    },
+    {
+      "bt": 190,
+      "burner": 30
+    },
+    {
+      "bt": 194,
+      "burner": 25
+    },
+    {
+      "bt": 198,
+      "burner": 15
+    }
+  ],
+  "notes": "Mark FC when multiple pops occur close together; hold settings. Don't increase heat to chase a brief FC dip. Natural: higher chaff, may look a little two-toned. Rest a week or more (10-14 days for espresso).",
+  "variants": {
+    "espresso": {
+      "drop": {
+        "bt": 205.0
+      },
+      "reference": {
+        "roast": 45,
+        "fc": "6:43",
+        "drop": "9:35"
+      }
+    },
+    "pourover": {
+      "drop": {
+        "bt": 201.5
+      },
+      "reference": {
+        "roast": 45,
+        "fc": "6:43",
+        "drop": "9:35"
+      }
+    }
+  },
+  "history": [
+    {
+      "date": "2026-11-16",
+      "afterRoast": 53,
+      "change": "Initial procedure, copied from the Ethiopia Yirgacheffe Idedo (the steps #45 ran): charge burner 55 / SV 230; burner 45 at 154, 40 + air 40 at 175, 35 at 178, 30 at 190, 25 at 194, 15 at 198. Espresso (first, the default) drop 205.0, 1.0 over the Idedo's 204.0; pourover 201.5, the Idedo's. The reference for both is #45 (Idedo espresso); there is no roast of this bean yet.",
+      "why": "Bought for espresso (1 lb, Sweet Maria's, 2026-11-16). Sweet Maria's Ethiopia Dry Process Bobea Uke: the Bobea Uke processing site in Odo Shakiso, western Guji, serving about 1,200 smallholders on farms at 1,850-2,250 m; heirloom varieties; natural, dried on raised beds; arrived Aug 2026; Grade 1, 15-17 screen, 0.6 defects/300 g; total score 92.6, the highest in their list today; City to Full City, good for espresso. Berry-toned (blackberry, cranberry) and juicy at City, with passion fruit, mango and florals; Full City was 'a surprise hit', chocolate-covered berry, grape, powdery cocoa, and 'an excellent fruit-forward espresso': berry-laden cocoa, apricot nectar, orange zest. The most similar bean with history is the Idedo, also a high-grown Ethiopian natural, and its steps are copied unchanged, since #45 ran them well: TP 0:39, FC 6:43 at 189.1, drop 9:35 at 204.2, development 30%, weight loss 18.2%; as a cortado, 'Very good. Smooth and somewhat subtle, not bold', and Levi 'LOVED it'. Only the espresso drop moves: 205.0, about 1 C more than #45, toward the Full City Sweet Maria's liked for espresso and a little bolder than #45, still short of second crack (206-207 on this probe). A half-step, since changes overshoot. Espresso is listed first (the default) because that's what this lot is for; pourover keeps the Idedo's 201.5 (City+) for the berry-forward cup. In the simulator (FC at #45's 189.1): FC 7:03, espresso drop 9:39 at 205.2 (2:36 of development, 9 s more than the Idedo's procedure there), pourover drop 9:06 at 201.8 (2:03, 23%). Watch FC: Ethiopiques V2 cracked at 180-183 (#5, #7), the Idedo at 189; if this cracks early, development runs long at these drops, so lower the drop rather than adding heat."
+    }
+  ]
+}

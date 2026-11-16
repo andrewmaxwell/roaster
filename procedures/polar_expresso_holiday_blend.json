@@ -1,0 +1,52 @@
+{
+  "bean": "polar_expresso_holiday_blend",
+  "batchGrams": 155,
+  "charge": {
+    "burner": 55,
+    "sv": 230
+  },
+  "steps": [
+    {
+      "bt": 154,
+      "burner": 45
+    },
+    {
+      "bt": 175,
+      "burner": 40,
+      "air": 40
+    },
+    {
+      "bt": 190,
+      "burner": 30
+    },
+    {
+      "bt": 194,
+      "burner": 25
+    },
+    {
+      "bt": 198,
+      "burner": 15
+    }
+  ],
+  "notes": "Mark FC when multiple pops occur close together; hold settings. Don't increase heat to chase a brief FC dip. If second crack's first pops come before the drop, open the door: that is the drop. Rest at least 3-4 days, a week for milk drinks.",
+  "variants": {
+    "espresso": {
+      "drop": {
+        "bt": 207.0
+      },
+      "reference": {
+        "roast": 30,
+        "fc": "7:15",
+        "drop": "10:29"
+      }
+    }
+  },
+  "history": [
+    {
+      "date": "2026-11-16",
+      "afterRoast": 53,
+      "change": "Initial procedure, copied from Colombian Supremo (current version): charge burner 55 / SV 230; burner 45 at 154, 40 + air 40 at 175, 30 at 190, 25 at 194, 15 at 198. Espresso only, drop 207.0. Reference: Supremo espresso #30; there is no roast of this bean yet.",
+      "why": "Bought for espresso and milk drinks (1 lb, Sweet Maria's, 2026-11-16). Sweet Maria's Polar Expresso Holiday Blend, sold once a year: four coffees, bittersweet Latin American coffees with East African fruit, washed and natural (Nyeri, Kenya; Limu, Ethiopia; Los Santos, Costa Rica; Bourbon, Caturra, Catuai, SL-28, SL-34, heirloom), 14+ screen; total score 90.6, the highest of their espresso blends; Full City to Full City+. Chocolate torte, ganache, chocolate orange, cherry cordial, red berry, burnt caramel; a thick, velvety crema. Their favorite for straight shots was the start of Full City, 'about 30-35 degrees of development beyond 1st Crack' (Fahrenheit: 17-19 C), with Full City+ 'a great milk drink option since bittersweetness is intense, and acidity minimal'; they suggest pulling back heat at or just before first crack to stretch development and dial back acidity, without stalling. The most similar bean with history is Espresso Monkey, the other Sweet Maria's espresso blend, but its steps aren't copied: #25 kept the burner at 35-25 from 193 to the drop and developed only 2:06 (25%), the opposite of this blend's advice, and its second-crack drop has never been roasted. The Supremo's steps do what Sweet Maria's asks: the burner comes down to 30, 25 and 15 from 190, about at first crack. In the simulator: FC 6:53 at 188.0, drop 9:51 at 207.3, 2:59 of development (30%), a rise of 19 C after FC. The drop, 207.0, is about 19-20 C above a typical FC of 187-188, at the end of Sweet Maria's range and toward Full City+ for the user's lattes, at the edge of second crack (206-207 on this probe), hence the door note. Kenyan SL-28/34 and high-grown Ethiopian are dense, so FC may land a bit later than the Supremo's; if it cracks early instead (Ethiopiques V2, a blend with African coffees, cracked at 180-183), lower the drop to keep the rise after FC near 19 C. First guesses; adjust after tasting."
+    }
+  ]
+}
