@@ -92,5 +92,20 @@
     "name": "PNG Carpenter Bunum Wo Peaberry",
     "supplier": "Burman Coffee",
     "aliases": ["png_carpenter_bunum_wo_peaberry"]
+  },
+  "colombia_caficultores_de_narino": {
+    "name": "Colombia Caficultores de Nariño",
+    "supplier": "Sweet Maria's",
+    "aliases": ["colombia_caficultores_de_narino"]
+  },
+  "ethiopia_dry_process_bobea_uke": {
+    "name": "Ethiopia Dry Process Bobea Uke",
+    "supplier": "Sweet Maria's",
+    "aliases": ["ethiopia_dry_process_bobea_uke"]
+  },
+  "polar_expresso_holiday_blend": {
+    "name": "Polar Expresso Holiday Blend",
+    "supplier": "Sweet Maria's",
+    "aliases": ["polar_expresso_holiday_blend"]
   }
 }

@@ -6,7 +6,10 @@
     {"date": "2026-10-14", "bean": "bali_blue_moon", "grams": 454, "supplier": "Burman Coffee", "order": "335002"},
     {"date": "2026-10-14", "bean": "thailand_doi_inthanon_honey", "grams": 454, "supplier": "Burman Coffee", "order": "335002"},
     {"date": "2026-10-14", "bean": "ethiopia_yirgacheffe_idedo_tigest_wako", "grams": 454, "supplier": "Burman Coffee", "order": "335002"},
-    {"date": "2026-10-14", "bean": "png_carpenter_bunum_wo_peaberry", "grams": 454, "supplier": "Burman Coffee", "order": "335002"}
+    {"date": "2026-10-14", "bean": "png_carpenter_bunum_wo_peaberry", "grams": 454, "supplier": "Burman Coffee", "order": "335002"},
+    {"date": "2026-11-16", "bean": "colombia_caficultores_de_narino", "grams": 2270, "supplier": "Sweet Maria's", "note": "5 lb, for gifts. Order number not given; total $69.14 with $8.99 shipping."},
+    {"date": "2026-11-16", "bean": "ethiopia_dry_process_bobea_uke", "grams": 454, "supplier": "Sweet Maria's", "note": "For espresso. Same order as the Nariño."},
+    {"date": "2026-11-16", "bean": "polar_expresso_holiday_blend", "grams": 454, "supplier": "Sweet Maria's", "note": "Seasonal espresso blend. Same order as the Nariño."}
   ],
   "counts": [
     {"date": "2026-10-20T13:27:00-05:00", "bean": "el_salvador_finca_miravalles_bourbon", "grams": 620, "note": "Carried over from the old batch counts: 4 batches × 155 g."},
